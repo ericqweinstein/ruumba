@@ -1,5 +1,8 @@
 Ruumba
 ======
+
+[![Build Status](https://travis-ci.org/ericqweinstein/ruumba.svg?branch=master)](https://travis-ci.org/ericqweinstein/ruumba)
+
 > .erb or .rb, you're coming with me.
 
 > — RuboCop
