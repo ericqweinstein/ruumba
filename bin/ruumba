@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby -w
+# @author Eric Weinstein <eric.q.weinstein@gmail.com>
+
+require 'optparse'
+require_relative '../lib/ruumba'
+
+opt_parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: ruumba path/to/ERBs/'
+
+  opts.on('-h', '--help', 'Display this screen') do
+    puts opts_parser
+    exit
+  end
+end
+
+begin opt_parser.parse!
+  rescue OptionParser::InvalidOption => e
+  abort "An error occurred: #{e}. Run ruumba -h for help."
+end
+
+analyzer = Ruumba::Analyzer.new
+analyzer.run

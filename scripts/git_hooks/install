@@ -1,0 +1,74 @@
+#!/usr/bin/env bash -e
+# Installs all project Git hooks.
+# Author: Eric Weinstein <eric.q.weinstein@gmail.com>
+
+# Output colors
+error() {
+  echo -e "\033[0;31m[!] $1\033[0;m"
+}
+warn() {
+  echo -e "\033[0;33m[-] $1\033[0;m"
+}
+warn_and_confirm() {
+  echo -ne "\033[0;33m[-] $1\033[0;m"
+}
+ok() {
+  echo -e "\033[0;32m[\xE2\x9C\x93] $1\033[0;m"
+}
+info() {
+  echo -e "\033[0;35m[+] $1\033[0;m"
+}
+
+TARGET_DIR="../../.git/hooks"
+
+# Check for .git/hooks relative to this directory
+check_dir() {
+  if [[ ! -d $TARGET_DIR ]]; then
+    error 'Could not locate Git hooks directory.'
+    info 'Ensure you have a .git/hooks directory in your project root and that you are running this script from within the /scripts/git_hooks directory.'
+    exit 1
+  fi
+}
+
+# Check to make sure we're not overwriting existing hooks
+check_overwrite() {
+  if [[ -e "$TARGET_DIR/$1" ]]; then
+    warn_and_confirm "You have an existing $1 hook; this script will overwrite it. Is this OK? [Y/N]: "
+    read response
+    case $response in
+      [nN] | [nN][Oo] )
+        error "Skipping $1 hook installation."
+        return 1
+        ;;
+      [yY] | [yY][Ee][Ss] )
+        return 0
+        ;;
+      * )
+        error "Default: skipping $1 hook installation due to invalid input."
+        return 1
+        ;;
+    esac
+  fi
+}
+
+# Copy hooks to .git/hooks
+install_hooks() {
+  check_dir
+
+  for file_path in $PWD/*; do
+    filename=$( echo $file_path | tr '/' '\n' | tail -n '1' )
+
+    # Don't install the installation script itself
+    if [[ $file_path != "$PWD/install" ]]; then
+      if check_overwrite $filename; then
+        info "Installing $filename hook..."
+        chmod +x $filename
+        cp $file_path $TARGET_DIR
+        ok "Successfully installed $filename hook."
+      fi
+    fi
+  done
+  ok "Done."
+}
+
+install_hooks

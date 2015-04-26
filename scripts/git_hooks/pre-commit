@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Lint and test every commit.
+
+# The default Rake task in this repo is test:all.
+bundle exec rake && bundle exec rake yard

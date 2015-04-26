@@ -1,0 +1,9 @@
+# Gem stuffs
+*.gem
+
+# Documentation
+.yardoc/
+doc/
+
+# Testing
+coverage/
