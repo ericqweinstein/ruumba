@@ -32,6 +32,10 @@ opts_parser = OptionParser.new do |opts|
   opts.on('-F', '--fail-level [LEVEL]', 'Rubocop fail level') do |l|
     options[:arguments] << "--fail-level #{l}"
   end
+
+  opts.on('-e', '--disable-ruby-ext', 'Disable auto-append of .rb extension') do
+    options[:disable_rb_extension] = true
+  end
 end
 
 begin opts_parser.parse!

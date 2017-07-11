@@ -45,11 +45,13 @@ module Ruumba
     end
 
     def copy_erb_files(fq_dir)
+      extension = '.rb' unless @options[:disable_rb_extension]
+
       Dir["#{fq_dir}/**/*.erb"].each do |f|
         n = tmp + Pathname.new(f).relative_path_from(pwd)
         FileUtils.mkdir_p(File.dirname(n))
 
-        File.open("#{n}.rb", 'w+') do |file|
+        File.open("#{n}#{extension}", 'w+') do |file|
           code = extract f
           file.write code
         end
