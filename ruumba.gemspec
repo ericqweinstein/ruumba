@@ -1,7 +1,7 @@
 Gem::Specification.new do |g|
   g.name          = 'ruumba'
   g.version       = File.read('VERSION')
-  g.authors       = ['Eric Weinstein', 'Jan Biniok']
+  g.authors       = ['Eric Weinstein', 'Jan Biniok', 'Yvan Barthélemy']
   g.date          = '2017-05-17'
   g.description   = 'RuboCop linting for ERB templates.'
   g.email         = 'eric.q.weinstein@gmail.com'

@@ -2,6 +2,7 @@
 
 require 'securerandom'
 require 'pathname'
+require 'tmpdir'
 
 # Ruumba: RuboCop's sidekick.
 module Ruumba
@@ -19,15 +20,18 @@ module Ruumba
     # @param [Array<String>] dir The directory to analyze.
     def run(dir = ARGV)
       fq_dir = Pathname.new(File.expand_path(dir.first))
+      pwd = Pathname.new ENV['PWD']
+      target = fq_dir.relative_path_from(pwd)
+
       if @options[:tmp_folder]
         tmp = Pathname.new(File.expand_path(@options[:tmp_folder]))
         FileUtils.rm_rf(tmp)
       else
-        tmp = Pathname.new("#{fq_dir}/ruumba_tmp_#{SecureRandom.hex[0..3]}/")
+        tmp = Pathname.new(Dir::mktmpdir)
       end
 
       Dir["#{fq_dir}/**/*.erb"].each do |f|
-        n = tmp + Pathname.new(f).relative_path_from(fq_dir)
+        n = tmp + Pathname.new(f).relative_path_from(pwd)
         FileUtils.mkdir_p(File.dirname(n))
 
         File.open("#{n}.rb", 'w+') do |file|
@@ -42,11 +46,14 @@ module Ruumba
         args = ''
       end
 
+      system("cd #{tmp} && rubocop #{args} #{target}")
+
+      todo = tmp + '.rubocop_todo.yml'
+      FileUtils.cp(todo, ENV['PWD']) if File.exists?(todo)
+
       if !@options[:tmp_folder]
         FileUtils.rm_rf(tmp)
       end
-
-      system("rubocop #{args} #{tmp}")
     end
 
     # Extracts Ruby code from an ERB template.
