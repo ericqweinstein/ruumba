@@ -23,13 +23,28 @@ module Ruumba
       pwd = Pathname.new ENV['PWD']
       target = fq_dir.relative_path_from(pwd)
 
-      if @options[:tmp_folder]
-        tmp = Pathname.new(File.expand_path(@options[:tmp_folder]))
-        FileUtils.rm_rf(tmp)
-      else
-        tmp = Pathname.new(Dir::mktmpdir)
-      end
+      copy_erb_files(fq_dir)
+      execute_rubocop(target)
+    end
 
+    # Extracts Ruby code from an ERB template.
+    # @param [String] filename The filename.
+    # @return [String] The extracted Ruby code.
+    def extract(filename)
+      File.read(filename).scan(ERB_REGEX).map(&:last).map(&:strip).join("\n")
+    end
+
+    private
+
+    def create_temp_dir
+      if @options[:tmp_folder]
+        Pathname.new(File.expand_path(@options[:tmp_folder]))
+      else
+        Pathname.new(Dir.mktmpdir)
+      end
+    end
+
+    def copy_erb_files(fq_dir)
       Dir["#{fq_dir}/**/*.erb"].each do |f|
         n = tmp + Pathname.new(f).relative_path_from(pwd)
         FileUtils.mkdir_p(File.dirname(n))
@@ -39,28 +54,16 @@ module Ruumba
           file.write code
         end
       end
-
-      if @options && @options[:arguments]
-        args = @options[:arguments].join(' ')
-      else
-        args = ''
-      end
-
-      system("cd #{tmp} && rubocop #{args} #{target}")
-
-      todo = tmp + '.rubocop_todo.yml'
-      FileUtils.cp(todo, ENV['PWD']) if File.exists?(todo)
-
-      if !@options[:tmp_folder]
-        FileUtils.rm_rf(tmp)
-      end
     end
 
-    # Extracts Ruby code from an ERB template.
-    # @param [String] filename The filename.
-    # @return [String] The extracted Ruby code.
-    def extract(filename)
-      File.read(filename).scan(ERB_REGEX).map(&:last).map(&:strip).join("\n")
+    def execute_rubocop(target)
+      args = (@options[:arguments] || []).join(' ')
+      tmp = create_temp_dir
+      todo = tmp + '.rubocop_todo.yml'
+
+      system("cd #{tmp} && rubocop #{args} #{target}")
+      FileUtils.cp(todo, ENV['PWD']) if File.exist?(todo)
+      FileUtils.rm_rf(tmp) unless @options[:tmp_folder]
     end
   end
 end

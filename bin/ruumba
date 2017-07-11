@@ -5,7 +5,7 @@ require 'optparse'
 require_relative '../lib/ruumba'
 
 options = { arguments: [] }
-opt_parser = OptionParser.new do |opts|
+opts_parser = OptionParser.new do |opts|
   opts.banner = 'Usage: ruumba path/to/ERBs/'
 
   opts.on('-h', '--help', 'Display this screen') do
@@ -34,7 +34,7 @@ opt_parser = OptionParser.new do |opts|
   end
 end
 
-begin opt_parser.parse!
+begin opts_parser.parse!
   rescue OptionParser::InvalidOption => e
   abort "An error occurred: #{e}. Run ruumba -h for help."
 end
