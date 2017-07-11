@@ -22,7 +22,7 @@ opts_parser = OptionParser.new do |opts|
   end
 
   opts.on('-c', '--config [CONFIG]', 'Use this config for rubocop') do |c|
-    options[:arguments] << "--config #{c}"
+    options[:arguments] << "--config #{File.expand_path(c)}"
   end
 
   opts.on('-D', '--display-cop-names', 'Display cop names') do ||

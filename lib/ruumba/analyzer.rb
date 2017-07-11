@@ -22,9 +22,10 @@ module Ruumba
       fq_dir = Pathname.new(File.expand_path(dir.first))
       pwd = Pathname.new ENV['PWD']
       target = fq_dir.relative_path_from(pwd)
+      tmp = create_temp_dir
 
-      copy_erb_files(fq_dir)
-      execute_rubocop(target)
+      copy_erb_files(fq_dir, tmp, pwd)
+      execute_rubocop(target, tmp)
     end
 
     # Extracts Ruby code from an ERB template.
@@ -44,7 +45,7 @@ module Ruumba
       end
     end
 
-    def copy_erb_files(fq_dir)
+    def copy_erb_files(fq_dir, tmp, pwd)
       extension = '.rb' unless @options[:disable_rb_extension]
 
       Dir["#{fq_dir}/**/*.erb"].each do |f|
@@ -58,9 +59,8 @@ module Ruumba
       end
     end
 
-    def execute_rubocop(target)
+    def execute_rubocop(target, tmp)
       args = (@options[:arguments] || []).join(' ')
-      tmp = create_temp_dir
       todo = tmp + '.rubocop_todo.yml'
 
       system("cd #{tmp} && rubocop #{args} #{target}")
