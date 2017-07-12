@@ -10,7 +10,7 @@ module Ruumba
   # to RuboCop for linting (style, correctness, &c).
   class Analyzer
     # The regular expression to capture interpolated Ruby.
-    ERB_REGEX = /<%=?(.*?)%>/m
+    ERB_REGEX = /<%[-=]?(.*?)-?%>/m
 
     def initialize(opts = nil)
       @options = opts || {}
