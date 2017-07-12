@@ -6,7 +6,7 @@ require 'rake/tasklib'
 module Ruumba
   # Provides a custom Rake task.
   class RakeTask < Rake::TaskLib
-    attr_accessor :name, :dir
+    attr_accessor :name, :dir, :options
 
     # Sets up the custom Rake task.
     # @param [Array<String>] args Arguments to the Rake task.
@@ -15,6 +15,7 @@ module Ruumba
     def initialize(*args, &block)
       @name = args.shift || :ruumba
       @dir  = []
+      @options = nil
 
       desc 'Run RuboCop on ERB files' # unless ::Rake.application.last_comment
 
@@ -33,7 +34,7 @@ module Ruumba
       # doesn't substantially impact Rakefile load time.
       require 'ruumba'
 
-      analyzer = Ruumba::Analyzer.new
+      analyzer = Ruumba::Analyzer.new(@options)
       puts 'Running Ruumba...'
 
       analyzer.run @dir
