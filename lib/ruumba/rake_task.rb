@@ -17,8 +17,7 @@ module Ruumba
       @dir  = []
       @options = nil
 
-      desc 'Run RuboCop on ERB files' # unless ::Rake.application.last_comment
-
+      desc 'Run RuboCop on ERB files'
       task(name, *args) do |_, task_args|
         block.call(*[self, task_args].slice(0, block.arity)) if block
         run
