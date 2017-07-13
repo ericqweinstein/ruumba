@@ -36,7 +36,7 @@ module Ruumba
       analyzer = Ruumba::Analyzer.new(@options)
       puts 'Running Ruumba...'
 
-      analyzer.run @dir
+      analyzer.run(@dir) || exit(1)
     end
   end
 end

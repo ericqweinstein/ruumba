@@ -25,7 +25,7 @@ module Ruumba
       tmp = create_temp_dir
 
       copy_erb_files(fq_dir, tmp, pwd)
-      execute_rubocop(target, tmp)
+      run_rubocop(target, tmp)
     end
 
     # Extracts Ruby code from an ERB template.
@@ -59,13 +59,14 @@ module Ruumba
       end
     end
 
-    def execute_rubocop(target, tmp)
+    def run_rubocop(target, tmp)
       args = (@options[:arguments] || []).join(' ')
       todo = tmp + '.rubocop_todo.yml'
 
-      system("cd #{tmp} && rubocop #{args} #{target}")
-      FileUtils.cp(todo, ENV['PWD']) if File.exist?(todo)
-      FileUtils.rm_rf(tmp) unless @options[:tmp_folder]
+      system("cd #{tmp} && rubocop #{args} #{target}").tap do
+        FileUtils.cp(todo, ENV['PWD']) if File.exist?(todo)
+        FileUtils.rm_rf(tmp) unless @options[:tmp_folder]
+      end
     end
   end
 end
