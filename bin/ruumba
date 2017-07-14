@@ -4,19 +4,44 @@
 require 'optparse'
 require_relative '../lib/ruumba'
 
-opt_parser = OptionParser.new do |opts|
+options = { arguments: [] }
+opts_parser = OptionParser.new do |opts|
   opts.banner = 'Usage: ruumba path/to/ERBs/'
 
   opts.on('-h', '--help', 'Display this screen') do
     puts opts_parser
     exit
   end
+
+  opts.on('-a', '--auto-gen-config', 'Generate a configuration file acting as a TODO list.') do
+    options[:arguments] << '--auto-gen-config'
+  end
+
+  opts.on('-t', '--tmp-folder [TEMP_FOLDER]', 'Use this suffix for the temporary folder') do |f|
+    options[:tmp_folder] = f
+  end
+
+  opts.on('-c', '--config [CONFIG]', 'Use this config for rubocop') do |c|
+    options[:arguments] << "--config #{File.expand_path(c)}"
+  end
+
+  opts.on('-D', '--display-cop-names', 'Display cop names') do ||
+    options[:arguments] << "--display-cop-names"
+  end
+
+  opts.on('-F', '--fail-level [LEVEL]', 'Rubocop fail level') do |l|
+    options[:arguments] << "--fail-level #{l}"
+  end
+
+  opts.on('-e', '--disable-ruby-ext', 'Disable auto-append of .rb extension') do
+    options[:disable_rb_extension] = true
+  end
 end
 
-begin opt_parser.parse!
+begin opts_parser.parse!
   rescue OptionParser::InvalidOption => e
   abort "An error occurred: #{e}. Run ruumba -h for help."
 end
 
-analyzer = Ruumba::Analyzer.new
+analyzer = Ruumba::Analyzer.new(options)
 analyzer.run

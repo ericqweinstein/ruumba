@@ -1,8 +1,8 @@
 PATH
   remote: .
   specs:
-    ruumba (0.0.1)
-      rubocop (~> 0.28.0)
+    ruumba (0.1.0)
+      rubocop
 
 GEM
   remote: https://rubygems.org/
@@ -95,7 +95,13 @@ DEPENDENCIES
   guard-rspec (~> 4.5.0)
   rake (~> 10.4.2)
   rspec (~> 3.1.0)
-  rubocop (~> 0.28.0)
+  rubocop
   ruumba!
   simplecov
   yard (~> 0.8.7.6)
+
+RUBY VERSION
+   ruby 2.4.1p111
+
+BUNDLED WITH
+   1.15.1

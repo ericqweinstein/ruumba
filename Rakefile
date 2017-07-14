@@ -29,9 +29,3 @@ desc 'Run all the tests, lint all the things'
 namespace :test do
   task all: %i(spec rubocop)
 end
-
-desc 'Generate Ruby documentation'
-YARD::Rake::YardocTask.new do |t|
-  t.files   = %w(lib/**/*.rb)
-  t.options = %w(--protected --private)
-end
