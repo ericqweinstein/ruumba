@@ -1,0 +1,27 @@
+# Ironically, sometimes we disagree with RuboCop. Here's where we do it.
+
+Style/FrozenStringLiteralComment:
+  Exclude:
+    - 'Gemfile'
+    - 'Guardfile'
+    - 'Rakefile'
+    - 'bin/ruumba'
+    - 'lib/ruumba.rb'
+    - 'lib/ruumba/analyzer.rb'
+    - 'lib/ruumba/rake_task.rb'
+    - 'ruumba.gemspec'
+    - 'spec/ruumba/analyzer_spec.rb'
+    - 'spec/ruumba/rake_task_spec.rb'
+    - 'spec/spec_helper.rb'
+
+Metrics/AbcSize:
+  Max: 30
+
+Metrics/BlockLength:
+  Max: 60
+
+Metrics/LineLength:
+  Max: 130
+
+Metrics/MethodLength:
+  Max: 25

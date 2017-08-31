@@ -37,18 +37,18 @@ describe Ruumba::Analyzer do
     end
 
     it 'does extract single line ruby comments from an ERB template' do
-      comment = <<-EOF
-<% puts 'foo'
-# that puts is ruby code
-bar %>
+      comment = <<~EOF
+        <% puts 'foo'
+        # that puts is ruby code
+        bar %>
 EOF
 
       allow(File).to receive(:read).with('comment.erb') { comment }
 
-      parsed = <<-EOF
-puts 'foo'
-# that puts is ruby code
-bar
+      parsed = <<~EOF
+        puts 'foo'
+        # that puts is ruby code
+        bar
 EOF
       parsed = parsed.strip
 
