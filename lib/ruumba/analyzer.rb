@@ -84,7 +84,7 @@ module Ruumba
             # @TODO: This is pretty hacky. (EQW 30 Aug 2017)
             out << if line.match?(/<%/)
                      "  <% #{code.shift.rstrip} %>\n"
-                   elsif /<%=/
+                   elsif line.match?(/<%=/)
                      "  <%= #{code.shift.rstrip} %>\n"
                    else
                      noncode.shift
