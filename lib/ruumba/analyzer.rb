@@ -32,7 +32,7 @@ module Ruumba
     # @param [String] filename The filename.
     # @return [String] The extracted Ruby code.
     def extract(filename)
-      File.read(filename).scan(ERB_REGEX).map(&:last)
+      File.open(filename, 'r:UTF-8', &:read).scan(ERB_REGEX).map(&:last)
         .reject { |line| line[0] == '#' }
         .map(&:strip).join("\n")
     end
