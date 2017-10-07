@@ -67,6 +67,17 @@ EOF
       expect(analyzer.extract('comment.erb')).to eq('')
     end
 
+    it 'extracts and converts lines using <%== for the raw helper' do
+      comment = <<-EOF
+        <span class="test" <%== 'style="display: none;"' if num.even? %>>
+      EOF
+
+      allow(File).to receive(:read).with('comment.erb') { comment }
+
+      expect(analyzer.extract('comment.erb'))
+        .to eq("raw 'style=\"display: none;\"' if num.even?")
+    end
+
     it 'does not extract code from lines without ERB interpolation' do
       none = "<h1>Dead or alive, you're coming with me.</h1>"
       allow(File).to receive(:read).with('none.erb') { none }
