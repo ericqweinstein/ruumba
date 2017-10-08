@@ -19,21 +19,21 @@ describe Ruumba::Analyzer do # rubocop:disable Metrics/BlockLength
       one = "<%= puts 'Hello, world!' %>"
       allow(File).to receive(:read).with('one.erb') { one }
 
-      expect(analyzer.extract('one.erb')).to eq("puts 'Hello, world!'")
+      expect(analyzer.extract('one.erb')).to eq("    puts 'Hello, world!'   ")
     end
 
     it 'extracts many lines of Ruby code from an ERB template' do
       many = "<%= puts 'foo' %>\n<%= puts 'bar' %>\n<% baz %>"
       allow(File).to receive(:read).with('many.erb') { many }
 
-      expect(analyzer.extract('many.erb')).to eq("puts 'foo'\nputs 'bar'\nbaz")
+      expect(analyzer.extract('many.erb')).to eq("    puts 'foo'   \n    puts 'bar'   \n   baz   ")
     end
 
     it 'extracts multiple interpolations per line' do
       multi = "<%= puts 'foo' %> then <% bar %>"
       allow(File).to receive(:read).with('multi.erb') { multi }
 
-      expect(analyzer.extract('multi.erb')).to eq("puts 'foo'\nbar")
+      expect(analyzer.extract('multi.erb')).to eq("    puts 'foo' ;          bar   ")
     end
 
     it 'does extract single line ruby comments from an ERB template' do
@@ -45,13 +45,13 @@ describe Ruumba::Analyzer do # rubocop:disable Metrics/BlockLength
 
       allow(File).to receive(:read).with('comment.erb') { comment }
 
+      # rubocop:disable Layout/TrailingWhitespace
       parsed = <<~RUBY
-        puts 'foo'
+           puts 'foo'
         # that puts is ruby code
-        bar
+        bar   
       RUBY
-
-      parsed = parsed.strip
+      # rubocop:enable Layout/TrailingWhitespace
 
       expect(analyzer.extract('comment.erb')).to eq(parsed)
     end
@@ -65,7 +65,7 @@ describe Ruumba::Analyzer do # rubocop:disable Metrics/BlockLength
 
       allow(File).to receive(:read).with('comment.erb') { comment }
 
-      expect(analyzer.extract('comment.erb')).to eq('')
+      expect(analyzer.extract('comment.erb')).to eq(comment.gsub(/./, ' '))
     end
 
     it 'extracts and converts lines using <%== for the raw helper' do
@@ -76,14 +76,14 @@ describe Ruumba::Analyzer do # rubocop:disable Metrics/BlockLength
       allow(File).to receive(:read).with('comment.erb') { comment }
 
       expect(analyzer.extract('comment.erb'))
-        .to eq("raw 'style=\"display: none;\"' if num.even?")
+        .to eq("#{' ' * 23}raw 'style=\"display: none;\"' if num.even?    \n")
     end
 
     it 'does not extract code from lines without ERB interpolation' do
       none = "<h1>Dead or alive, you're coming with me.</h1>"
       allow(File).to receive(:read).with('none.erb') { none }
 
-      expect(analyzer.extract('none.erb')).to eq('')
+      expect(analyzer.extract('none.erb')).to eq(' ' * none.length)
     end
   end
 end
