@@ -36,6 +36,22 @@ opts_parser = OptionParser.new do |opts|
   opts.on('-e', '--disable-ruby-ext', 'Disable auto-append of .rb extension') do
     options[:disable_rb_extension] = true
   end
+
+  opts.on('--only [COP1,COP2,...]', 'Run only the given cop(s).') do |cops|
+    options[:arguments] << "--only #{cops}"
+  end
+
+  opts.on('-r', '--require [FILE]', 'Require Ruby file.') do |file|
+    options[:arguments] << "--require #{file}"
+  end
+
+  opts.on('-o', '--out [FILE]', 'Write output to a file instead of STDOUT.') do |file|
+    options[:arguments] << "--out #{file}"
+  end
+
+  opts.on('-f', '--format [FORMAT]', 'Choose an output formatter.') do |format|
+    options[:arguments] << "--format #{format}"
+  end
 end
 
 begin opts_parser.parse!
