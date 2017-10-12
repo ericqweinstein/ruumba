@@ -32,7 +32,9 @@ module Ruumba
     # @param [String] filename The filename.
     # @return [String] The extracted Ruby code.
     def extract(filename)
-      File.read(filename).scan(ERB_REGEX).map(&:last)
+      # http://edgeguides.rubyonrails.org/active_support_core_extensions.html#output-safety
+      # replace '<%==' with '<%= raw' to avoid generating invalid ruby code
+      File.read(filename).gsub(/<%==/, '<%= raw').scan(ERB_REGEX).map(&:last)
         .reject { |line| line[0] == '#' }
         .map(&:strip).join("\n")
     end
