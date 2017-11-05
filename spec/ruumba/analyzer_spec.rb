@@ -7,8 +7,11 @@ describe Ruumba::Analyzer do # rubocop:disable Metrics/BlockLength
 
   describe '#run' do
     it 'analyzes the provided ERB files' do
-      allow(Kernel).to receive(:system).and_return('success')
-      expect(analyzer).to receive(:system)
+      status = double
+      expect(status).to receive(:exitstatus).and_return(0)
+
+      results = ['', '', status]
+      expect(Open3).to receive(:capture3).and_return(results)
 
       analyzer.run(['foo'])
     end
