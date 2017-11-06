@@ -26,6 +26,10 @@ opts_parser = OptionParser.new do |opts|
     options[:arguments] << File.expand_path(c)
   end
 
+  opts.on('-d', '--debug', 'Display debug info.') do ||
+    options[:arguments] << '--debug'
+  end
+
   opts.on('-D', '--display-cop-names', 'Display cop names') do ||
     options[:arguments] << '--display-cop-names'
   end
