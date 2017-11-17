@@ -1,0 +1,8 @@
+Metrics/LineLength:
+  Max: 130
+
+Metrics/MethodLength:
+  Max: 25
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
