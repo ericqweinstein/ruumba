@@ -122,7 +122,7 @@ module Ruumba
         replacements << [/\.erb\.rb/, '.erb']
       end
 
-      Dir.chdir(tmp) do
+      result = Dir.chdir(tmp) do
         stdout, stderr, status = Open3.capture3(*args)
 
         munge_output(stdout, stderr, replacements)
@@ -132,6 +132,8 @@ module Ruumba
 
       FileUtils.cp(todo, pwd) if File.exist?(todo)
       FileUtils.rm_rf(tmp) unless @options[:tmp_folder]
+
+      result
     end
 
     def munge_output(stdout, stderr, replacements)

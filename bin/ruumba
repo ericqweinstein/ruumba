@@ -67,4 +67,4 @@ rescue OptionParser::InvalidOption => e
 end
 
 analyzer = Ruumba::Analyzer.new(options)
-analyzer.run
+exit(analyzer.run)
