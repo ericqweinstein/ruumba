@@ -3,6 +3,8 @@
 require 'securerandom'
 require 'pathname'
 require 'tmpdir'
+require 'open3'
+require 'English'
 
 # Ruumba: RuboCop's sidekick.
 module Ruumba
@@ -107,12 +109,42 @@ module Ruumba
     end
 
     def run_rubocop(target, tmp)
-      args = (@options[:arguments] || []).join(' ')
+      args = ['rubocop'] + (@options[:arguments] || []) + [target.to_s]
       todo = tmp + '.rubocop_todo.yml'
 
-      system("cd #{tmp} && rubocop #{args} #{target}").tap do
-        FileUtils.cp(todo, ENV['PWD']) if File.exist?(todo)
-        FileUtils.rm_rf(tmp) unless @options[:tmp_folder]
+      pwd = ENV['PWD']
+
+      replacements = []
+
+      replacements << [/^#{Regexp.quote(tmp.to_s)}/, pwd]
+
+      unless @options[:disable_rb_extension]
+        replacements << [/\.erb\.rb/, '.erb']
+      end
+
+      result = Dir.chdir(tmp) do
+        stdout, stderr, status = Open3.capture3(*args)
+
+        munge_output(stdout, stderr, replacements)
+
+        status.exitstatus
+      end
+
+      FileUtils.cp(todo, pwd) if File.exist?(todo)
+      FileUtils.rm_rf(tmp) unless @options[:tmp_folder]
+
+      result
+    end
+
+    def munge_output(stdout, stderr, replacements)
+      [[STDOUT, stdout], [STDERR, stderr]].each do |output_stream, output|
+        next if output.nil? || output.empty?
+
+        replacements.each do |pattern, replacement|
+          output.gsub!(pattern, replacement)
+        end
+
+        output_stream.puts(output)
       end
     end
   end
