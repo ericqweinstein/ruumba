@@ -71,6 +71,11 @@ opts_parser = OptionParser.new do |opts|
     options[:arguments] << '--format'
     options[:arguments] << format
   end
+
+  opts.on('-s', '--stdin [FILE]', 'Pipe source from STDIN, using FILE in offense reports. ' \
+                                  'This is useful for editor integration') do |file|
+    options[:stdin] = file
+  end
 end
 
 begin

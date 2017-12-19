@@ -21,22 +21,26 @@ module Ruumba
     # Performs static analysis on the provided directory.
     # @param [Array<String>] dir The directories / files to analyze.
     def run(files_or_dirs = ARGV)
-      files_or_dirs = ['.'] if files_or_dirs.empty?
-      fq_files_or_dirs = files_or_dirs.map { |file_or_dir| Pathname.new(File.expand_path(file_or_dir)) }
       pwd = Pathname.new(ENV['PWD'])
       tmp = create_temp_dir
 
-      copy_erb_files(fq_files_or_dirs, tmp, pwd)
+      if @options[:stdin]
+        copy_erb_files(nil, tmp, pwd)
+      else
+        files_or_dirs = ['.'] if files_or_dirs.empty?
+        fq_files_or_dirs = files_or_dirs.map { |file_or_dir| Pathname.new(File.expand_path(file_or_dir)) }
+        copy_erb_files(fq_files_or_dirs, tmp, pwd)
+      end
 
       target = '.'
       run_rubocop(target, tmp)
     end
 
     # Extracts Ruby code from an ERB template.
-    # @param [String] filename The filename.
+    # @param [String] the contents of an ERB template.
     # @return [String] The extracted Ruby code.
-    def extract(filename)
-      file_text, matches = parse_file(filename)
+    def extract(contents)
+      file_text, matches = parse_file_contents(contents)
 
       extracted_ruby = ''
 
@@ -54,10 +58,10 @@ module Ruumba
 
     private
 
-    def parse_file(filename)
+    def parse_file_contents(contents)
       # http://edgeguides.rubyonrails.org/active_support_core_extensions.html#output-safety
       # replace '<%==' with '<%= raw' to avoid generating invalid ruby code
-      file_text = File.read(filename).gsub(/<%==/, '<%= raw')
+      file_text = contents.gsub(/<%==/, '<%= raw')
 
       matching_regions = file_text.enum_for(:scan, ERB_REGEX)
                                   .map { Regexp.last_match.offset(1) }
@@ -99,23 +103,27 @@ module Ruumba
     def copy_erb_files(fq_files_or_dirs, tmp, pwd)
       extension = '.rb' unless @options[:disable_rb_extension]
 
-      fq_files_or_dirs.each do |fq_file_or_dir|
-        if fq_file_or_dir.file?
-          copy_erb_file(fq_file_or_dir, tmp, pwd, extension) if fq_file_or_dir.to_s.end_with?('.erb')
-        else
-          Dir["#{fq_file_or_dir}/**/*.erb"].each do |f|
-            copy_erb_file(f, tmp, pwd, extension)
+      if @options[:stdin]
+        copy_erb_file(@options[:stdin], STDIN.read, tmp, pwd, extension) if @options[:stdin].end_with?('.erb')
+      else
+        fq_files_or_dirs.each do |fq_file_or_dir|
+          if fq_file_or_dir.file?
+            copy_erb_file(fq_file_or_dir, File.read(fq_file_or_dir), tmp, pwd, extension) if fq_file_or_dir.to_s.end_with?('.erb')
+          else
+            Dir["#{fq_file_or_dir}/**/*.erb"].each do |f|
+              copy_erb_file(f, File.read(f), tmp, pwd, extension)
+            end
           end
         end
       end
     end
 
-    def copy_erb_file(file, tmp, pwd, extension)
+    def copy_erb_file(file, contents, tmp, pwd, extension)
       n = tmp + Pathname.new(file).relative_path_from(pwd)
       FileUtils.mkdir_p(File.dirname(n))
 
       File.open("#{n}#{extension}", 'w+') do |tmp_file|
-        code = extract(file)
+        code = extract(contents)
         tmp_file.write(code)
       end
     end
