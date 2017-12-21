@@ -10,5 +10,5 @@ group :development, :test do
   gem 'rspec',       '~> 3.1.0'
   gem 'rubocop'
   gem 'simplecov',   require: false
-  gem 'yard',        '~> 0.8.7.6'
+  gem 'yard',        '~> 0.9.11'
 end
