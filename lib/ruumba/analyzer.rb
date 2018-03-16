@@ -127,7 +127,7 @@ module Ruumba
 
         munge_output(stdout, stderr, replacements)
 
-        status.success?
+        status.exitstatus.zero?
       end
 
       FileUtils.cp(todo, pwd) if File.exist?(todo)
