@@ -13,7 +13,7 @@ describe Ruumba::Analyzer do # rubocop:disable Metrics/BlockLength
       results = ['', '', status]
       expect(Open3).to receive(:capture3).and_return(results)
 
-      analyzer.run(['foo'])
+      expect(analyzer.run(['foo'])).to eq(true)
     end
   end
 
