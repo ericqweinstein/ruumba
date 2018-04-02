@@ -48,6 +48,10 @@ opts_parser = OptionParser.new do |opts|
     options[:arguments] << cops
   end
 
+  opts.on('-l', '--lint', 'Run only lint cops.') do
+    options[:arguments] << '--lint'
+  end
+
   opts.on('-r', '--require [FILE]', 'Require Ruby file.') do |file|
     options[:arguments] << '--require'
     options[:arguments] << file
