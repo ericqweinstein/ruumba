@@ -19,14 +19,16 @@ module Ruumba
     end
 
     # Performs static analysis on the provided directory.
-    # @param [Array<String>] dir The directory to analyze.
-    def run(dir = ARGV)
-      fq_dir = Pathname.new(File.expand_path(dir.first))
-      pwd = Pathname.new ENV['PWD']
-      target = fq_dir.relative_path_from(pwd)
+    # @param [Array<String>] dir The directories / files to analyze.
+    def run(files_or_dirs = ARGV)
+      files_or_dirs = ['.'] if files_or_dirs.empty?
+      fq_files_or_dirs = files_or_dirs.map { |file_or_dir| Pathname.new(File.expand_path(file_or_dir)) }
+      pwd = Pathname.new(ENV['PWD'])
       tmp = create_temp_dir
 
-      copy_erb_files(fq_dir, tmp, pwd)
+      copy_erb_files(fq_files_or_dirs, tmp, pwd)
+
+      target = '.'
       run_rubocop(target, tmp)
     end
 
@@ -94,17 +96,27 @@ module Ruumba
       end
     end
 
-    def copy_erb_files(fq_dir, tmp, pwd)
+    def copy_erb_files(fq_files_or_dirs, tmp, pwd)
       extension = '.rb' unless @options[:disable_rb_extension]
 
-      Dir["#{fq_dir}/**/*.erb"].each do |f|
-        n = tmp + Pathname.new(f).relative_path_from(pwd)
-        FileUtils.mkdir_p(File.dirname(n))
-
-        File.open("#{n}#{extension}", 'w+') do |file|
-          code = extract f
-          file.write code
+      fq_files_or_dirs.each do |fq_file_or_dir|
+        if fq_file_or_dir.file?
+          copy_erb_file(fq_file_or_dir, tmp, pwd, extension) if fq_file_or_dir.to_s.end_with?('.erb')
+        else
+          Dir["#{fq_file_or_dir}/**/*.erb"].each do |f|
+            copy_erb_file(f, tmp, pwd, extension)
+          end
         end
+      end
+    end
+
+    def copy_erb_file(file, tmp, pwd, extension)
+      n = tmp + Pathname.new(file).relative_path_from(pwd)
+      FileUtils.mkdir_p(File.dirname(n))
+
+      File.open("#{n}#{extension}", 'w+') do |tmp_file|
+        code = extract(file)
+        tmp_file.write(code)
       end
     end
 
