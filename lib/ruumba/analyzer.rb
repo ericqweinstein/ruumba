@@ -42,7 +42,7 @@ module Ruumba
 
       last_match = [0, 0]
       matches.each do |start_index, end_index|
-        handled_region_before(start_index, last_match.last, file_text, extracted_ruby)
+        handle_region_before(start_index, last_match.last, file_text, extracted_ruby)
 
         extracted_ruby << extract_match(file_text, start_index, end_index)
 
@@ -50,14 +50,22 @@ module Ruumba
       end
 
       extracted_ruby << file_text[last_match.last..-1].gsub(/./, ' ')
+
+      # since we replace <%= with <%=erb when parsing the file, remove the
+      # leading three spaces if possible so our column numbers line up
+      extracted_ruby.gsub(/   erb/, 'erb')
     end
 
     private
 
     def parse_file(filename)
+      # replace <%= with a dummy method erb to avoid triggering the Lint/Void cop
+      file_text = File.read(filename).gsub(/<%=/, '<%=erb')
+
       # http://edgeguides.rubyonrails.org/active_support_core_extensions.html#output-safety
-      # replace '<%==' with '<%= raw' to avoid generating invalid ruby code
-      file_text = File.read(filename).gsub(/<%==/, '<%= raw')
+      # replace '<%==' with '<%= erb' (taking into account the replacment already done)
+      # to avoid generating invalid ruby code
+      file_text = file_text.gsub(/<%=erb=/, '<%= erb')
 
       matching_regions = file_text.enum_for(:scan, ERB_REGEX)
                                   .map { Regexp.last_match.offset(1) }
@@ -65,8 +73,7 @@ module Ruumba
       [file_text, matching_regions]
     end
 
-    def handled_region_before(match_start, prev_end_index,
-                              file_text, extracted_ruby)
+    def handle_region_before(match_start, prev_end_index, file_text, extracted_ruby)
       return unless match_start > prev_end_index
 
       region_before = file_text[prev_end_index..match_start - 1]
