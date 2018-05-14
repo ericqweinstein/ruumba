@@ -32,6 +32,20 @@ describe Ruumba::Analyzer do # rubocop:disable Metrics/BlockLength
       expect(analyzer.extract('many.erb')).to eq("erb puts 'foo'   \nerb puts 'bar'   \n   baz   ")
     end
 
+    it 'extracts Ruby line containing <%= ... do %> from an ERB template' do
+      block = "<%= form_for @record do |foo| %>\n<%= puts 'bar' %>\n<% end %>"
+      allow(File).to receive(:read).with('block.erb') { block }
+
+      expect(analyzer.extract('block.erb')).to eq("    form_for @record do |foo|   \nerb puts 'bar'   \n   end   ")
+    end
+
+    it 'extracts Ruby line containing <%= ... {|n| %> from an ERB template' do
+      block = "<%= form_for @record { |foo| %>\n<%= puts 'bar' %>\n<% } %>"
+      allow(File).to receive(:read).with('block.erb') { block }
+
+      expect(analyzer.extract('block.erb')).to eq("    form_for @record { |foo|   \nerb puts 'bar'   \n   }   ")
+    end
+
     it 'extracts multiple interpolations per line' do
       multi = "<%= puts 'foo' %> then <% bar %>"
       allow(File).to receive(:read).with('multi.erb') { multi }

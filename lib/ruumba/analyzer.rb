@@ -14,6 +14,9 @@ module Ruumba
     # The regular expression to capture interpolated Ruby.
     ERB_REGEX = /<%[-=]?(.*?)-?%>/m
 
+    # The regular expression used to detect blocks inside interpolated Ruby
+    BLOCK_EXPR = /\s*((\s+|\))do|\{)(\s*\|[^|]*\|)?\s*\Z/
+
     def initialize(opts = nil)
       @options = opts || {}
     end
@@ -92,6 +95,8 @@ module Ruumba
     def extract_match(file_text, start_index, end_index)
       file_text[start_index...end_index].tap do |region|
         region.gsub!(/./, ' ') if region[0] == '#'
+
+        region.sub!(/\Aerb/, '') if region.start_with?("erb ") && region =~ BLOCK_EXPR
       end
     end
 
