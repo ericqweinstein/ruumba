@@ -100,7 +100,7 @@ module Ruumba
       file_text[start_index...end_index].tap do |region|
         region.gsub!(/./, ' ') if region[0] == '#'
 
-        region.sub!(/\A#{ERBOUT}/, '') if region.start_with?("#{ERBOUT} ") && region =~ BLOCK_EXPR
+        region.sub!(/\A#{ERBOUT}/, ' ' * ERBOUT.length) if region.start_with?("#{ERBOUT} ") && region =~ BLOCK_EXPR
       end
     end
 
