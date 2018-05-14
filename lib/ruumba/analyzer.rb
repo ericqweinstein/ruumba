@@ -17,6 +17,10 @@ module Ruumba
     # The regular expression used to detect blocks inside interpolated Ruby
     BLOCK_EXPR = /\s*((\s+|\))do|\{)(\s*\|[^|]*\|)?\s*\Z/
 
+    # Imaginary method so that <%= statement %> does not trigger Lint/Void warnings
+    # Can be anything three chars long so as to keep the column numbers intact
+    ERBOUT = 'erb'.freeze
+
     def initialize(opts = nil)
       @options = opts || {}
     end
@@ -56,19 +60,19 @@ module Ruumba
 
       # since we replace <%= with <%=erb when parsing the file, remove the
       # leading three spaces if possible so our column numbers line up
-      extracted_ruby.gsub(/   erb/, 'erb')
+      extracted_ruby.gsub(/   #{ERBOUT}/, ERBOUT)
     end
 
     private
 
     def parse_file(filename)
       # replace <%= with a dummy method erb to avoid triggering the Lint/Void cop
-      file_text = File.read(filename).gsub(/<%=/, '<%=erb')
+      file_text = File.read(filename).gsub(/<%=/, "<%=#{ERBOUT}")
 
       # http://edgeguides.rubyonrails.org/active_support_core_extensions.html#output-safety
       # replace '<%==' with '<%= erb' (taking into account the replacment already done)
       # to avoid generating invalid ruby code
-      file_text = file_text.gsub(/<%=erb=/, '<%= erb')
+      file_text = file_text.gsub(/<%=erb=/, "<%= #{ERBOUT}")
 
       matching_regions = file_text.enum_for(:scan, ERB_REGEX)
                                   .map { Regexp.last_match.offset(1) }
@@ -96,7 +100,7 @@ module Ruumba
       file_text[start_index...end_index].tap do |region|
         region.gsub!(/./, ' ') if region[0] == '#'
 
-        region.sub!(/\Aerb/, '') if region.start_with?("erb ") && region =~ BLOCK_EXPR
+        region.sub!(/\A#{ERBOUT}/, '') if region.start_with?("#{ERBOUT} ") && region =~ BLOCK_EXPR
       end
     end
 
