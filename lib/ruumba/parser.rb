@@ -27,6 +27,10 @@ module Ruumba
       extracted_ruby << file_text[last_match.last..-1].gsub(/./, ' ')
       extracted_ruby.gsub!(/[^\S\r\n]+$/, '')
 
+      # if we replaced <%== with <%= raw, try to shift the columns back to the
+      # left so they match the original again
+      extracted_ruby.gsub!(/   raw/, 'raw')
+
       extracted_ruby
     end
 

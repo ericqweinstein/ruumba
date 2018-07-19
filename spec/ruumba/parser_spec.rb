@@ -61,7 +61,7 @@ describe Ruumba::Parser do
       RHTML
 
       expect(analyzer.extract(erb))
-        .to eq("#{' ' * 23}raw 'style=\"display: none;\"' if num.even?\n")
+        .to eq("                    raw 'style=\"display: none;\"' if num.even?\n")
     end
 
     it 'does not extract code from lines without ERB interpolation' do
