@@ -29,8 +29,7 @@ module Ruumba
         copy_erb_files(fq_files_or_dirs, tmp, pwd)
       end
 
-      target = '.'
-      run_rubocop(target, tmp)
+      run_rubocop(pwd, tmp)
     end
 
     private
@@ -71,44 +70,8 @@ module Ruumba
       end
     end
 
-    def run_rubocop(target, tmp)
-      args = ['rubocop'] + (@options[:arguments] || []) + [target.to_s]
-      todo = tmp + '.rubocop_todo.yml'
-
-      pwd = Dir.pwd
-
-      replacements = []
-
-      unless @options[:disable_rb_extension]
-        replacements << [/\.erb\.rb/, '.erb']
-      end
-
-      result = Dir.chdir(tmp) do
-        replacements.unshift([/^#{Regexp.quote(Dir.pwd)}/, pwd])
-
-        stdout, stderr, status = Open3.capture3(*args)
-
-        munge_output(stdout, stderr, replacements)
-
-        status.exitstatus.zero?
-      end
-
-      FileUtils.cp(todo, pwd) if File.exist?(todo)
-      FileUtils.rm_rf(tmp) unless @options[:tmp_folder]
-
-      result
-    end
-
-    def munge_output(stdout, stderr, replacements)
-      [[STDOUT, stdout], [STDERR, stderr]].each do |output_stream, output|
-        next if output.nil? || output.empty?
-
-        replacements.each do |pattern, replacement|
-          output.gsub!(pattern, replacement)
-        end
-
-        output_stream.puts(output)
-      end
+    def run_rubocop(pwd, tmp)
+      RubocopRunner.new(@options[:arguments], pwd, tmp, !@options[:disable_rb_extension]).execute
     end
   end
 end
