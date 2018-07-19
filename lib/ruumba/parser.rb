@@ -17,7 +17,7 @@ module Ruumba
 
       last_match = [0, 0]
       matches.each do |start_index, end_index|
-        handled_region_before(start_index, last_match.last, file_text, extracted_ruby)
+        handle_region_before(start_index, last_match.last, file_text, extracted_ruby)
 
         extracted_ruby << extract_match(file_text, start_index, end_index)
 
@@ -47,7 +47,7 @@ module Ruumba
       [file_text, matching_regions]
     end
 
-    def handled_region_before(match_start, prev_end_index, file_text, extracted_ruby)
+    def handle_region_before(match_start, prev_end_index, file_text, extracted_ruby)
       return unless match_start > prev_end_index
 
       region_before = file_text[prev_end_index..match_start - 1]
