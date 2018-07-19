@@ -6,6 +6,10 @@ require 'tmpdir'
 require 'open3'
 require 'English'
 
+require 'ruumba/iterators'
+require 'ruumba/parser'
+require 'ruumba/rubocop_runner'
+
 # Ruumba: RuboCop's sidekick.
 module Ruumba
   # Generates analyzer objects that, when run, delegate
@@ -18,60 +22,77 @@ module Ruumba
     # Performs static analysis on the provided directory.
     # @param [Array<String>] dir The directories / files to analyze.
     def run(files_or_dirs = ARGV)
-      pwd = Pathname.new(ENV['PWD'])
-      tmp = create_temp_dir
+      iterator =
+        if stdin?
+          Iterators::StdinIterator.new(stdin_filename)
+        else
+          Iterators::DirectoryIterator.new(files_or_dirs)
+        end
 
-      if @options[:stdin]
-        copy_erb_files(nil, tmp, pwd)
-      else
-        files_or_dirs = ['.'] if files_or_dirs.empty?
-        fq_files_or_dirs = files_or_dirs.map { |file_or_dir| Pathname.new(File.expand_path(file_or_dir)) }
-        copy_erb_files(fq_files_or_dirs, tmp, pwd)
+      iterator.each do |file, contents|
+        copy_erb_file(file, contents)
       end
 
-      run_rubocop(pwd, tmp)
+      RubocopRunner.new(arguments, pwd, temp_dir, !disable_rb_extension?).execute
     end
 
     private
 
-    def create_temp_dir
-      if @options[:tmp_folder]
-        Pathname.new(File.expand_path(@options[:tmp_folder]))
-      else
-        Pathname.new(Dir.mktmpdir)
-      end
+    attr_reader :options
+
+    def extension
+      '.rb' unless disable_rb_extension?
     end
 
-    def copy_erb_files(fq_files_or_dirs, tmp, pwd)
-      extension = '.rb' unless @options[:disable_rb_extension]
+    def stdin?
+      stdin_filename
+    end
 
-      if @options[:stdin]
-        copy_erb_file(@options[:stdin], STDIN.read, tmp, pwd, extension) if @options[:stdin].end_with?('.erb')
-      else
-        fq_files_or_dirs.each do |fq_file_or_dir|
-          if fq_file_or_dir.file?
-            copy_erb_file(fq_file_or_dir, File.read(fq_file_or_dir), tmp, pwd, extension) if fq_file_or_dir.to_s.end_with?('.erb')
-          else
-            Dir["#{fq_file_or_dir}/**/*.erb"].each do |f|
-              copy_erb_file(f, File.read(f), tmp, pwd, extension)
-            end
-          end
+    def stdin_filename
+      options[:stdin]
+    end
+
+    def arguments
+      options[:arguments]
+    end
+
+    def disable_rb_extension?
+      options[:disable_rb_extension]
+    end
+
+    def pwd
+      @pwd ||= Pathname.new(ENV['PWD'])
+    end
+
+    def temp_dir
+      @temp_dir ||= begin
+        if options[:tmp_folder]
+          Pathname.new(File.expand_path(options[:tmp_folder]))
+        else
+          Pathname.new(Dir.mktmpdir)
         end
       end
     end
 
-    def copy_erb_file(file, contents, tmp, pwd, extension)
-      n = tmp + Pathname.new(file).relative_path_from(pwd)
+    def parser
+      @parser ||= Parser.new
+    end
+
+    def copy_erb_file(file, contents)
+      code = parser.extract(contents)
+
+      n = temp_filename_for(file)
       FileUtils.mkdir_p(File.dirname(n))
 
-      File.open("#{n}#{extension}", 'w+') do |tmp_file|
-        code = Parser.new.parse(contents)
+      File.open(n, 'w+') do |tmp_file|
         tmp_file.write(code)
       end
     end
 
-    def run_rubocop(pwd, tmp)
-      RubocopRunner.new(@options[:arguments], pwd, tmp, !@options[:disable_rb_extension]).execute
+    def temp_filename_for(file)
+      name = temp_dir.join(Pathname.new(file).relative_path_from(pwd))
+
+      "#{name}#{extension}"
     end
   end
 end
