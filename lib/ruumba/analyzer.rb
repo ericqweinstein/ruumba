@@ -124,17 +124,17 @@ module Ruumba
       args = ['rubocop'] + (@options[:arguments] || []) + [target.to_s]
       todo = tmp + '.rubocop_todo.yml'
 
-      pwd = ENV['PWD']
+      pwd = Dir.pwd
 
       replacements = []
-
-      replacements << [/^#{Regexp.quote(tmp.to_s)}/, pwd]
 
       unless @options[:disable_rb_extension]
         replacements << [/\.erb\.rb/, '.erb']
       end
 
       result = Dir.chdir(tmp) do
+        replacements.unshift([/^#{Regexp.quote(Dir.pwd)}/, pwd])
+
         stdout, stderr, status = Open3.capture3(*args)
 
         munge_output(stdout, stderr, replacements)
