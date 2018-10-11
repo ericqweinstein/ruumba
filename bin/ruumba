@@ -26,6 +26,11 @@ opts_parser = OptionParser.new do |opts|
     options[:arguments] << File.expand_path(c)
   end
 
+  opts.on('-C', '--cache FLAG', "Use result caching (FLAG=true) or don't", '(FLAG=false), default determined by', 'configuration parameter AllCops: UseCache.') do |flag|
+    options[:arguments] << '--cache'
+    options[:arguments] << flag
+  end
+
   opts.on('-d', '--debug', 'Display debug info.') do ||
     options[:arguments] << '--debug'
   end
