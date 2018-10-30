@@ -2,91 +2,142 @@
 
 require 'spec_helper'
 
-describe Ruumba::Analyzer do # rubocop:disable Metrics/BlockLength
-  let(:analyzer) { Ruumba::Analyzer.new }
-
-  describe '#run' do
-    it 'analyzes the provided ERB files' do
-      status = double
-      expect(status).to receive(:exitstatus).and_return(0)
-
-      results = ['', '', status]
-      expect(Open3).to receive(:capture3).and_return(results)
-
-      expect(analyzer.run(['foo'])).to eq(true)
-    end
+describe Ruumba::Analyzer do
+  subject(:analysis) { analyzer.run(file_list) }
+  let(:analyzer) { described_class.new(options) }
+  let(:current_directory) { Pathname.new(ENV['PWD']) }
+  let(:rubocop_runner) { double(Ruumba::RubocopRunner) }
+  let(:parser) { double(Ruumba::Parser) }
+  let(:result) { 1 }
+  let(:rubocop_arguments) { %w[--lint-only] }
+  let(:disable_rb_extension) { false }
+  let(:file_list) { ['app', 'lib', 'spec/thing_spec.rb'] }
+  let(:options) do
+    {
+      arguments: rubocop_arguments,
+      disable_rb_extension: disable_rb_extension,
+      tmp_folder: temp_folder_option
+    }
   end
 
-  describe '#extract' do # rubocop:disable Metrics/BlockLength
-    it 'extracts one line of Ruby code from an ERB template' do
-      one = "<%= puts 'Hello, world!' %>"
-      allow(File).to receive(:read).with('one.erb') { one }
-
-      expect(analyzer.extract('one.erb')).to eq("    puts 'Hello, world!'   ")
+  describe '#run' do
+    before do
+      expect(Ruumba::RubocopRunner).to receive(:new).with(
+        rubocop_arguments, Pathname.new(ENV['PWD']), temp_dir, !disable_rb_extension
+      ).and_return(rubocop_runner)
+      expect(Ruumba::Parser).to receive(:new).and_return(parser)
     end
 
-    it 'extracts many lines of Ruby code from an ERB template' do
-      many = "<%= puts 'foo' %>\n<%= puts 'bar' %>\n<% baz %>"
-      allow(File).to receive(:read).with('many.erb') { many }
+    context 'when passing in the filename via stdin' do
+      let(:stdin_filename) { 'file1.erb' }
+      let(:file_and_content) do
+        [
+          [current_directory.join('file1.erb'), 'contents1']
+        ]
+      end
 
-      expect(analyzer.extract('many.erb')).to eq("    puts 'foo'   \n    puts 'bar'   \n   baz   ")
+      before do
+        options[:stdin] = stdin_filename
+        expect(Ruumba::Iterators::StdinIterator).to receive(:new).with(stdin_filename).and_return(file_and_content)
+        expect(parser).to receive(:extract).with('contents1').and_return('code1')
+      end
+
+      shared_examples_for 'linting a single file' do
+        it 'copies the file, adding the .rb extension and runs rubocop' do
+          expect(File).to receive(:open).with(temp_dir.join('file1.erb.rb').to_s, 'w+')
+
+          expect(rubocop_runner).to receive(:execute).and_return(result)
+
+          expect(analysis).to eq(result)
+        end
+
+        context 'when the rb extension is disabled' do
+          let(:disable_rb_extension) { true }
+
+          it 'copies the file and runs rubocop' do
+            expect(File).to receive(:open).with(temp_dir.join('file1.erb').to_s, 'w+')
+
+            expect(rubocop_runner).to receive(:execute).and_return(result)
+
+            expect(analysis).to eq(result)
+          end
+        end
+      end
+
+      context 'when no temporary directory is configured' do
+        let(:temp_folder_option) { nil }
+        let(:temp_dir) { Pathname.new(Dir.mktmpdir) }
+
+        before do
+          expect(Dir).to receive(:mktmpdir).and_return(temp_dir)
+        end
+
+        it_behaves_like 'linting a single file'
+      end
+
+      context 'when a temporary directory is configured' do
+        let(:temp_folder_option) { temp_dir.to_s }
+        let(:temp_dir) { Pathname.new(Dir.mktmpdir) }
+
+        it_behaves_like 'linting a single file'
+      end
     end
 
-    it 'extracts multiple interpolations per line' do
-      multi = "<%= puts 'foo' %> then <% bar %>"
-      allow(File).to receive(:read).with('multi.erb') { multi }
+    context 'when file names are passed as arguments' do
+      let(:files_and_contents) do
+        [
+          [current_directory.join('file1.erb'), 'contents1'],
+          [current_directory.join('file2.erb'), 'contents2']
+        ]
+      end
 
-      expect(analyzer.extract('multi.erb')).to eq("    puts 'foo' ;          bar   ")
-    end
+      before do
+        expect(Ruumba::Iterators::DirectoryIterator).to receive(:new).with(file_list).and_return(files_and_contents)
+        expect(parser).to receive(:extract).with('contents1').and_return('code1')
+        expect(parser).to receive(:extract).with('contents2').and_return('code2')
+      end
 
-    it 'does extract single line ruby comments from an ERB template' do
-      comment = <<~RHTML
-        <% puts 'foo'
-        # that puts is ruby code
-        bar %>
-      RHTML
+      shared_examples_for 'linting a list of files' do
+        it 'copies the files, adding the .rb extension and runs rubocop' do
+          expect(File).to receive(:open).with(temp_dir.join('file1.erb.rb').to_s, 'w+')
+          expect(File).to receive(:open).with(temp_dir.join('file2.erb.rb').to_s, 'w+')
 
-      allow(File).to receive(:read).with('comment.erb') { comment }
+          expect(rubocop_runner).to receive(:execute).and_return(result)
 
-      # rubocop:disable Layout/TrailingWhitespace
-      parsed = <<~RUBY
-           puts 'foo'
-        # that puts is ruby code
-        bar   
-      RUBY
-      # rubocop:enable Layout/TrailingWhitespace
+          expect(analysis).to eq(result)
+        end
 
-      expect(analyzer.extract('comment.erb')).to eq(parsed)
-    end
+        context 'when the rb extension is disabled' do
+          let(:disable_rb_extension) { true }
 
-    it 'does not extract ruby comments from interpolated code' do
-      comment = <<~RHTML
-        <%# this is a multiline comment
-            interpolated in the ERB template
-            it should resolve to nothing %>
-      RHTML
+          it 'copies the files and runs rubocop' do
+            expect(File).to receive(:open).with(temp_dir.join('file1.erb').to_s, 'w+')
+            expect(File).to receive(:open).with(temp_dir.join('file2.erb').to_s, 'w+')
 
-      allow(File).to receive(:read).with('comment.erb') { comment }
+            expect(rubocop_runner).to receive(:execute).and_return(result)
 
-      expect(analyzer.extract('comment.erb')).to eq(comment.gsub(/./, ' '))
-    end
+            expect(analysis).to eq(result)
+          end
+        end
+      end
 
-    it 'extracts and converts lines using <%== for the raw helper' do
-      comment = <<~RHTML
-        <span class="test" <%== 'style="display: none;"' if num.even? %>>
-      RHTML
+      context 'when no temporary directory is configured' do
+        let(:temp_folder_option) { nil }
+        let(:temp_dir) { Pathname.new(Dir.mktmpdir) }
 
-      allow(File).to receive(:read).with('comment.erb') { comment }
+        before do
+          expect(Dir).to receive(:mktmpdir).and_return(temp_dir)
+        end
 
-      expect(analyzer.extract('comment.erb'))
-        .to eq("#{' ' * 23}raw 'style=\"display: none;\"' if num.even?    \n")
-    end
+        it_behaves_like 'linting a list of files'
+      end
 
-    it 'does not extract code from lines without ERB interpolation' do
-      none = "<h1>Dead or alive, you're coming with me.</h1>"
-      allow(File).to receive(:read).with('none.erb') { none }
+      context 'when a temporary directory is configured' do
+        let(:temp_folder_option) { temp_dir.to_s }
+        let(:temp_dir) { Pathname.new(Dir.mktmpdir) }
 
-      expect(analyzer.extract('none.erb')).to eq(' ' * none.length)
+        it_behaves_like 'linting a list of files'
+      end
     end
   end
 end

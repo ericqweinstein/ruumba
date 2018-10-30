@@ -6,14 +6,15 @@ require 'tmpdir'
 require 'open3'
 require 'English'
 
+require 'ruumba/iterators'
+require 'ruumba/parser'
+require 'ruumba/rubocop_runner'
+
 # Ruumba: RuboCop's sidekick.
 module Ruumba
   # Generates analyzer objects that, when run, delegate
   # to RuboCop for linting (style, correctness, &c).
   class Analyzer
-    # The regular expression to capture interpolated Ruby.
-    ERB_REGEX = /<%[-=]?(.*?)-?%>/m
-
     def initialize(opts = nil)
       @options = opts || {}
     end
@@ -21,143 +22,77 @@ module Ruumba
     # Performs static analysis on the provided directory.
     # @param [Array<String>] dir The directories / files to analyze.
     def run(files_or_dirs = ARGV)
-      files_or_dirs = ['.'] if files_or_dirs.empty?
-      fq_files_or_dirs = files_or_dirs.map { |file_or_dir| Pathname.new(File.expand_path(file_or_dir)) }
-      pwd = Pathname.new(ENV['PWD'])
-      tmp = create_temp_dir
+      iterator =
+        if stdin?
+          Iterators::StdinIterator.new(stdin_filename)
+        else
+          Iterators::DirectoryIterator.new(files_or_dirs)
+        end
 
-      copy_erb_files(fq_files_or_dirs, tmp, pwd)
-
-      target = '.'
-      run_rubocop(target, tmp)
-    end
-
-    # Extracts Ruby code from an ERB template.
-    # @param [String] filename The filename.
-    # @return [String] The extracted Ruby code.
-    def extract(filename)
-      file_text, matches = parse_file(filename)
-
-      extracted_ruby = ''
-
-      last_match = [0, 0]
-      matches.each do |start_index, end_index|
-        handled_region_before(start_index, last_match.last, file_text, extracted_ruby)
-
-        extracted_ruby << extract_match(file_text, start_index, end_index)
-
-        last_match = [start_index, end_index]
+      iterator.each do |file, contents|
+        copy_erb_file(file, contents)
       end
 
-      extracted_ruby << file_text[last_match.last..-1].gsub(/./, ' ')
+      RubocopRunner.new(arguments, pwd, temp_dir, !disable_rb_extension?).execute
     end
 
     private
 
-    def parse_file(filename)
-      # http://edgeguides.rubyonrails.org/active_support_core_extensions.html#output-safety
-      # replace '<%==' with '<%= raw' to avoid generating invalid ruby code
-      file_text = File.read(filename).gsub(/<%==/, '<%= raw')
+    attr_reader :options
 
-      matching_regions = file_text.enum_for(:scan, ERB_REGEX)
-                                  .map { Regexp.last_match.offset(1) }
-
-      [file_text, matching_regions]
+    def extension
+      '.rb' unless disable_rb_extension?
     end
 
-    def handled_region_before(match_start, prev_end_index,
-                              file_text, extracted_ruby)
-      return unless match_start > prev_end_index
-
-      region_before = file_text[prev_end_index..match_start - 1]
-
-      extracted_ruby << region_before.gsub(/./, ' ')
-
-      # if the last match was on the same line, we need to use a semicolon to
-      # separate statements
-      extracted_ruby[prev_end_index] = ';' if needs_stmt_delimiter?(prev_end_index, region_before)
+    def stdin?
+      stdin_filename
     end
 
-    def needs_stmt_delimiter?(last_match, region_before)
-      last_match.positive? && region_before.index("\n").nil?
+    def stdin_filename
+      options[:stdin]
     end
 
-    def extract_match(file_text, start_index, end_index)
-      file_text[start_index...end_index].tap do |region|
-        region.gsub!(/./, ' ') if region[0] == '#'
-      end
+    def arguments
+      options[:arguments]
     end
 
-    def create_temp_dir
-      if @options[:tmp_folder]
-        Pathname.new(File.expand_path(@options[:tmp_folder]))
-      else
-        Pathname.new(Dir.mktmpdir)
-      end
+    def disable_rb_extension?
+      options[:disable_rb_extension]
     end
 
-    def copy_erb_files(fq_files_or_dirs, tmp, pwd)
-      extension = '.rb' unless @options[:disable_rb_extension]
+    def pwd
+      @pwd ||= Pathname.new(ENV['PWD'])
+    end
 
-      fq_files_or_dirs.each do |fq_file_or_dir|
-        if fq_file_or_dir.file?
-          copy_erb_file(fq_file_or_dir, tmp, pwd, extension) if fq_file_or_dir.to_s.end_with?('.erb')
+    def temp_dir
+      @temp_dir ||= begin
+        if options[:tmp_folder]
+          Pathname.new(File.expand_path(options[:tmp_folder]))
         else
-          Dir["#{fq_file_or_dir}/**/*.erb"].each do |f|
-            copy_erb_file(f, tmp, pwd, extension)
-          end
+          Pathname.new(Dir.mktmpdir)
         end
       end
     end
 
-    def copy_erb_file(file, tmp, pwd, extension)
-      n = tmp + Pathname.new(file).relative_path_from(pwd)
+    def parser
+      @parser ||= Parser.new
+    end
+
+    def copy_erb_file(file, contents)
+      code = parser.extract(contents)
+
+      n = temp_filename_for(file)
       FileUtils.mkdir_p(File.dirname(n))
 
-      File.open("#{n}#{extension}", 'w+') do |tmp_file|
-        code = extract(file)
+      File.open(n, 'w+') do |tmp_file|
         tmp_file.write(code)
       end
     end
 
-    def run_rubocop(target, tmp)
-      args = ['rubocop'] + (@options[:arguments] || []) + [target.to_s]
-      todo = tmp + '.rubocop_todo.yml'
+    def temp_filename_for(file)
+      name = temp_dir.join(Pathname.new(file).relative_path_from(pwd))
 
-      pwd = Dir.pwd
-
-      replacements = []
-
-      unless @options[:disable_rb_extension]
-        replacements << [/\.erb\.rb/, '.erb']
-      end
-
-      result = Dir.chdir(tmp) do
-        replacements.unshift([/^#{Regexp.quote(Dir.pwd)}/, pwd])
-
-        stdout, stderr, status = Open3.capture3(*args)
-
-        munge_output(stdout, stderr, replacements)
-
-        status.exitstatus.zero?
-      end
-
-      FileUtils.cp(todo, pwd) if File.exist?(todo)
-      FileUtils.rm_rf(tmp) unless @options[:tmp_folder]
-
-      result
-    end
-
-    def munge_output(stdout, stderr, replacements)
-      [[STDOUT, stdout], [STDERR, stderr]].each do |output_stream, output|
-        next if output.nil? || output.empty?
-
-        replacements.each do |pattern, replacement|
-          output.gsub!(pattern, replacement)
-        end
-
-        output_stream.puts(output)
-      end
+      "#{name}#{extension}"
     end
   end
 end
