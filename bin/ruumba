@@ -104,5 +104,10 @@ rescue OptionParser::InvalidOption => e
   abort "An error occurred: #{e}. Run ruumba -h for help."
 end
 
+if !options[:arguments].include?('--config') && File.exist?('.ruumba.yml')
+  options[:arguments] << '--config'
+  options[:arguments] << File.expand_path('.ruumba.yml')
+end
+
 analyzer = Ruumba::Analyzer.new(options)
 exit(analyzer.run)
