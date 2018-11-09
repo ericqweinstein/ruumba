@@ -13,7 +13,7 @@ GEM
     coderay (1.1.0)
     diff-lcs (1.2.5)
     docile (1.1.5)
-    ffi (1.9.6)
+    ffi (1.9.25)
     formatador (0.2.5)
     guard (2.11.1)
       formatador (>= 0.2.4)
