@@ -22,6 +22,22 @@ module Ruumba
     # Performs static analysis on the provided directory.
     # @param [Array<String>] dir The directories / files to analyze.
     def run(files_or_dirs = ARGV)
+      if options[:tmp_folder]
+        analyze(File.expand_path(options[:tmp_folder]), files_or_dirs)
+      else
+        Dir.mktmpdir do |dir|
+          analyze(dir, files_or_dirs)
+        end
+      end
+    end
+
+    private
+
+    attr_reader :options
+
+    def analyze(temp_dir, files_or_dirs)
+      temp_dir_path = Pathname.new(temp_dir)
+
       iterator =
         if stdin?
           Iterators::StdinIterator.new(stdin_filename)
@@ -30,15 +46,11 @@ module Ruumba
         end
 
       iterator.each do |file, contents|
-        copy_erb_file(file, contents)
+        copy_erb_file(file, contents, temp_dir_path)
       end
 
-      RubocopRunner.new(arguments, pwd, temp_dir, !disable_rb_extension?).execute
+      RubocopRunner.new(arguments, pwd, temp_dir_path, !disable_rb_extension?).execute
     end
-
-    private
-
-    attr_reader :options
 
     def extension
       '.rb' unless disable_rb_extension?
@@ -64,24 +76,14 @@ module Ruumba
       @pwd ||= Pathname.new(ENV['PWD'])
     end
 
-    def temp_dir
-      @temp_dir ||= begin
-        if options[:tmp_folder]
-          Pathname.new(File.expand_path(options[:tmp_folder]))
-        else
-          Pathname.new(Dir.mktmpdir)
-        end
-      end
-    end
-
     def parser
       @parser ||= Parser.new
     end
 
-    def copy_erb_file(file, contents)
+    def copy_erb_file(file, contents, temp_dir)
       code = parser.extract(contents)
 
-      n = temp_filename_for(file)
+      n = temp_filename_for(file, temp_dir)
       FileUtils.mkdir_p(File.dirname(n))
 
       File.open(n, 'w+') do |tmp_file|
@@ -89,7 +91,7 @@ module Ruumba
       end
     end
 
-    def temp_filename_for(file)
+    def temp_filename_for(file, temp_dir)
       name = temp_dir.join(Pathname.new(file).relative_path_from(pwd))
 
       "#{name}#{extension}"

@@ -20,6 +20,10 @@ describe Ruumba::RubocopRunner do
       expect(status).to receive(:exitstatus).and_return(exitstatus)
     end
 
+    after do
+      FileUtils.remove_dir(target)
+    end
+
     it 'returns the exitstatus from rubocop' do
       expect(runner.execute).to eq(exitstatus)
     end

@@ -69,7 +69,13 @@ describe Ruumba::Analyzer do
         let(:temp_dir) { Pathname.new(Dir.mktmpdir) }
 
         before do
-          expect(Dir).to receive(:mktmpdir).and_return(temp_dir)
+          expect(Dir).to receive(:mktmpdir) do |*_args, &block|
+            block.call(temp_dir)
+          end
+        end
+
+        after do
+          FileUtils.remove_dir(temp_dir)
         end
 
         it_behaves_like 'linting a single file'
@@ -78,6 +84,10 @@ describe Ruumba::Analyzer do
       context 'when a temporary directory is configured' do
         let(:temp_folder_option) { temp_dir.to_s }
         let(:temp_dir) { Pathname.new(Dir.mktmpdir) }
+
+        after do
+          FileUtils.remove_dir(temp_dir)
+        end
 
         it_behaves_like 'linting a single file'
       end
@@ -126,7 +136,13 @@ describe Ruumba::Analyzer do
         let(:temp_dir) { Pathname.new(Dir.mktmpdir) }
 
         before do
-          expect(Dir).to receive(:mktmpdir).and_return(temp_dir)
+          expect(Dir).to receive(:mktmpdir) do |*_args, &block|
+            block.call(temp_dir)
+          end
+        end
+
+        after do
+          FileUtils.remove_dir(temp_dir)
         end
 
         it_behaves_like 'linting a list of files'
