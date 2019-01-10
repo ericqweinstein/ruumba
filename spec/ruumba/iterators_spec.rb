@@ -41,6 +41,10 @@ describe Ruumba::Iterators::DirectoryIterator do
       end
     end
 
+    after do
+      FileUtils.remove_dir(target_dir)
+    end
+
     context 'when nil is passed as the directory' do
       let(:input_list) { nil }
 
