@@ -88,6 +88,9 @@ front of your Ruumba config:
 inherit_from: .rubocop.yml
 ```
 
+### Editor integrations
+
+* [Atom plugin](https://github.com/vzamanillo/linter-ruumba)
 
 ## Contributing
 1. Branch (`git checkout -b fancy-new-feature`)
