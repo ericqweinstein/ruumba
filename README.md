@@ -90,7 +90,7 @@ inherit_from: .rubocop.yml
 
 ### Editor integrations
 
-* [Atom plugin](https://github.com/vzamanillo/linter-ruumba)
+* [Atom plugin](https://atom.io/packages/linter-ruumba)
 
 ## Contributing
 1. Branch (`git checkout -b fancy-new-feature`)
