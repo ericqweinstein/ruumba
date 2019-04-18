@@ -29,30 +29,41 @@ describe Ruumba::Parser do
     end
 
     it 'does extract single line ruby comments from an ERB template' do
-      erb = <<~RHTML
-        <% puts 'foo'
-        # that puts is ruby code
-        bar %>
-      RHTML
+      erb =
+        <<~RHTML
+          <% puts 'foo'
+          # that puts is ruby code
+          bar %>
+        RHTML
 
-      parsed = <<~RUBY
-           puts 'foo'
-        # that puts is ruby code
-        bar
-      RUBY
+      parsed =
+        <<~RUBY
+             puts 'foo'
+          # that puts is ruby code
+          bar
+        RUBY
 
       expect(analyzer.extract(erb)).to eq(parsed)
     end
 
     it 'does not extract ruby comments from interpolated code' do
-      erb = <<~RHTML
-        <%# this is a multiline comment
-            interpolated in the ERB template
-            it should resolve to nothing %>
-        <% puts 'foo' %>
-      RHTML
+      erb =
+        <<~RHTML
+          <%# this is a multiline comment
+              interpolated in the ERB template
+              it should be inside a comment %>
+          <% puts 'foo' %>
+        RHTML
 
-      expect(analyzer.extract(erb)).to eq("\n\n\n   puts 'foo'\n")
+      parsed =
+        <<~RUBY
+            # this is a multiline comment
+          #   interpolated in the ERB template
+          #   it should be inside a comment
+             puts 'foo'
+        RUBY
+
+      expect(analyzer.extract(erb)).to eq(parsed)
     end
 
     it 'extracts and converts lines using <%== for the raw helper' do
