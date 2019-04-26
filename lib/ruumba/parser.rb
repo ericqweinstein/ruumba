@@ -65,8 +65,13 @@ module Ruumba
 
     def extract_match(file_text, start_index, end_index)
       file_text[start_index...end_index].tap do |region|
-        # if this is a ruby comment inside, replace the whole match with spaces
-        region.gsub!(/[^\r\n]/, ' ') if region[0] == '#'
+        # if there is a ruby comment inside, replace the beginning of each line
+        # with the '#' so we end up with valid ruby
+
+        if region[0] == '#'
+          region.gsub!(/^ /, '#')
+          region.gsub!(/^(?!#)/, '#')
+        end
       end
     end
   end
