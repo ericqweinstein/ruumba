@@ -1,12 +1,14 @@
 # @author Eric Weinstein <eric.q.weinstein@gmail.com>
 
 require 'securerandom'
+require 'digest'
 require 'pathname'
 require 'tmpdir'
 require 'open3'
 require 'English'
 
 require 'ruumba/iterators'
+require 'ruumba/correctors'
 require 'ruumba/parser'
 require 'ruumba/rubocop_runner'
 
@@ -38,11 +40,11 @@ module Ruumba
     def analyze(temp_dir, files_or_dirs)
       temp_dir_path = Pathname.new(temp_dir)
 
-      iterator =
+      iterator, corrector =
         if stdin?
-          Iterators::StdinIterator.new(File.expand_path(stdin_filename))
+          [Iterators::StdinIterator.new(File.expand_path(stdin_filename)), Correctors::StdinCorrector.new(digestor, parser)]
         else
-          Iterators::DirectoryIterator.new(files_or_dirs)
+          [Iterators::DirectoryIterator.new(files_or_dirs), Correctors::FileCorrector.new(digestor, parser)]
         end
 
       iterator.each do |file, contents|
@@ -54,11 +56,25 @@ module Ruumba
         end
       end
 
-      RubocopRunner.new(arguments, pwd, temp_dir_path, @stdin_contents, !disable_rb_extension?).execute
+      stdout, stderr, exit_code = RubocopRunner.new(arguments, pwd, temp_dir_path, @stdin_contents, !disable_rb_extension?).execute
+
+      corrector.correct(stdout, stderr, file_mappings) if auto_correct?
+
+      [[STDOUT, stdout], [STDERR, stderr]].each do |output_stream, output|
+        next if output.nil? || output.empty?
+
+        output_stream.puts(output)
+      end
+
+      exit_code
     end
 
     def extension
       '.rb' unless disable_rb_extension?
+    end
+
+    def auto_correct?
+      options[:auto_correct]
     end
 
     def stdin?
@@ -85,13 +101,42 @@ module Ruumba
       @pwd ||= Pathname.new(ENV['PWD'])
     end
 
+    def auto_correct_marker
+      return @auto_correct_marker if defined?(@auto_correct_marker)
+
+      @auto_correct_marker = auto_correct? ? 'marker_' + SecureRandom.uuid.tr('-', '_') : nil
+    end
+
     def parser
-      @parser ||= Parser.new
+      @parser ||= Parser.new(auto_correct_marker)
+    end
+
+    def digestor
+      @digestor ||= ->(contents) { Digest::SHA256.base64digest(contents) }
+    end
+
+    def file_mappings
+      @file_mappings ||= {}
     end
 
     def copy_erb_file(file, contents, temp_dir)
       code = parser.extract(contents)
       new_file = temp_filename_for(file, temp_dir)
+
+      if auto_correct?
+        properties = []
+        properties << new_file
+        properties << digestor.call(code)
+
+        properties <<
+          if stdin?
+            contents
+          else
+            -> { File.read(file) }
+          end
+
+        file_mappings[file] = properties
+      end
 
       unless stdin?
         FileUtils.mkdir_p(File.dirname(new_file))

@@ -6,9 +6,10 @@ describe Ruumba::Analyzer do
   subject(:analysis) { analyzer.run(file_list) }
   let(:analyzer) { described_class.new(options) }
   let(:current_directory) { Pathname.new(ENV['PWD']) }
-  let(:rubocop_runner) { double(Ruumba::RubocopRunner) }
-  let(:parser) { double(Ruumba::Parser) }
-  let(:result) { 1 }
+  let(:rubocop_runner) { instance_double(Ruumba::RubocopRunner) }
+  let(:parser) { instance_double(Ruumba::Parser) }
+  let(:result) { [nil, nil, 1] }
+  let(:analyze_result) { result.last }
   let(:rubocop_stdin_contents) { nil }
   let(:disable_rb_extension) { false }
   let(:file_list) { ['app', 'lib', 'spec/thing_spec.rb'] }
@@ -52,7 +53,7 @@ describe Ruumba::Analyzer do
         it 'passes the extracted files contents on stdin, appends the rb extension to the stdin filename argument and runs rubocop' do
           expect(rubocop_runner).to receive(:execute).and_return(result)
 
-          expect(analysis).to eq(result)
+          expect(analysis).to eq(analyze_result)
         end
 
         context 'when the rb extension is disabled' do
@@ -62,7 +63,7 @@ describe Ruumba::Analyzer do
           it 'passes the extracted files contents on stdin and runs rubocop' do
             expect(rubocop_runner).to receive(:execute).and_return(result)
 
-            expect(analysis).to eq(result)
+            expect(analysis).to eq(analyze_result)
           end
         end
       end
@@ -117,7 +118,7 @@ describe Ruumba::Analyzer do
 
           expect(rubocop_runner).to receive(:execute).and_return(result)
 
-          expect(analysis).to eq(result)
+          expect(analysis).to eq(analyze_result)
         end
 
         context 'when the rb extension is disabled' do
@@ -129,7 +130,7 @@ describe Ruumba::Analyzer do
 
             expect(rubocop_runner).to receive(:execute).and_return(result)
 
-            expect(analysis).to eq(result)
+            expect(analysis).to eq(analyze_result)
           end
         end
       end
