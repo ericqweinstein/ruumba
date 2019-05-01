@@ -3,20 +3,21 @@
 require 'spec_helper'
 
 describe Ruumba::RubocopRunner do
-  let(:runner) { described_class.new(arguments, current_directory, target, rb_extension_enabled) }
+  let(:runner) { described_class.new(arguments, current_directory, target, stdin, rb_extension_enabled) }
   let(:rb_extension_enabled) { false }
   let(:target) { Pathname.new(Dir.mktmpdir) }
   let(:arguments) { %w[--option val] }
   let(:status) { double(Process::Status) }
   let(:stdout) { '' }
   let(:stderr) { '' }
+  let(:stdin) { nil }
   let(:results) { [stdout, stderr, status] }
   let!(:current_directory) { Pathname.new(ENV['PWD']) }
   let(:exitstatus) { 0 }
 
   describe '#execute' do
     before do
-      expect(Open3).to receive(:capture3).with(*(['rubocop'] + arguments)).and_return(results)
+      expect(Open3).to receive(:capture3).with(*(['rubocop'] + arguments), stdin_data: stdin).and_return(results)
       expect(status).to receive(:exitstatus).and_return(exitstatus)
     end
 

@@ -5,10 +5,11 @@ require 'open3'
 module Ruumba
   # Runs rubocop on the files in the given target_directory
   class RubocopRunner
-    def initialize(arguments, current_directory, target_directory, rb_extension_enabled)
+    def initialize(arguments, current_directory, target_directory, stdin, rb_extension_enabled)
       @arguments = Array(arguments)
       @current_directory = current_directory
       @rb_extension_enabled = rb_extension_enabled
+      @stdin = stdin
       @target_directory = target_directory
     end
 
@@ -26,7 +27,8 @@ module Ruumba
 
       result = Dir.chdir(target_directory) do
         replacements.unshift([/^#{Regexp.quote(Dir.pwd)}/, current_directory.to_s])
-        stdout, stderr, status = Open3.capture3(*args)
+
+        stdout, stderr, status = Open3.capture3(*args, stdin_data: stdin)
 
         munge_output(stdout, stderr, replacements)
 
@@ -41,7 +43,7 @@ module Ruumba
 
     private
 
-    attr_reader :arguments, :current_directory, :rb_extension_enabled, :target_directory
+    attr_reader :arguments, :current_directory, :rb_extension_enabled, :stdin, :target_directory
 
     def munge_output(stdout, stderr, replacements)
       [[STDOUT, stdout], [STDERR, stderr]].each do |output_stream, output|
