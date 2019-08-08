@@ -46,7 +46,10 @@ module Ruumba
         end
 
       iterator.each do |file, contents|
-        copy_erb_file(file, contents, temp_dir_path)
+        file_first_line = File.open(file, &:readline)
+        unless file_first_line.include? '# rubocop:disable all'
+          copy_erb_file(file, contents, temp_dir_path)
+        end
       end
 
       RubocopRunner.new(arguments, pwd, temp_dir_path, !disable_rb_extension?).execute
