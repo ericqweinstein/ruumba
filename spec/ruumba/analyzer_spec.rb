@@ -6,15 +6,18 @@ describe Ruumba::Analyzer do
   subject(:analysis) { analyzer.run(file_list) }
   let(:analyzer) { described_class.new(options) }
   let(:current_directory) { Pathname.new(ENV['PWD']) }
-  let(:rubocop_runner) { double(Ruumba::RubocopRunner) }
-  let(:parser) { double(Ruumba::Parser) }
-  let(:result) { 1 }
-  let(:rubocop_arguments) { %w[--lint-only] }
+  let(:rubocop_runner) { instance_double(Ruumba::RubocopRunner) }
+  let(:parser) { instance_double(Ruumba::Parser) }
+  let(:result) { [nil, nil, 1] }
+  let(:analyze_result) { result.last }
+  let(:rubocop_stdin_contents) { nil }
   let(:disable_rb_extension) { false }
   let(:file_list) { ['app', 'lib', 'spec/thing_spec.rb'] }
+  let(:arguments) { %w[--lint-only] }
+  let(:rubocop_arguments) { %w[--lint-only] }
   let(:options) do
     {
-      arguments: rubocop_arguments,
+      arguments: arguments,
       disable_rb_extension: disable_rb_extension,
       tmp_folder: temp_folder_option
     }
@@ -23,43 +26,44 @@ describe Ruumba::Analyzer do
   describe '#run' do
     before do
       expect(Ruumba::RubocopRunner).to receive(:new).with(
-        rubocop_arguments, Pathname.new(ENV['PWD']), temp_dir, !disable_rb_extension
+        rubocop_arguments, current_directory, temp_dir, rubocop_stdin_contents, !disable_rb_extension
       ).and_return(rubocop_runner)
       expect(Ruumba::Parser).to receive(:new).and_return(parser)
     end
 
     context 'when passing in the filename via stdin' do
+      let(:rubocop_stdin_filename) { File.expand_path(temp_dir.join(Pathname.new(stdin_filename)).to_s) + '.rb' }
+      let(:rubocop_arguments) { ['--lint-only', '--stdin', rubocop_stdin_filename] }
+      let(:rubocop_stdin_contents) { 'code1' }
+      let(:stdin_contents) { 'contents1 of erb' }
       let(:stdin_filename) { 'file1.erb' }
       let(:file_and_content) do
         [
-          [current_directory.join('file1.erb'), 'contents1']
+          [File.expand_path(stdin_filename), stdin_contents]
         ]
       end
 
       before do
         options[:stdin] = stdin_filename
-        expect(Ruumba::Iterators::StdinIterator).to receive(:new).with(stdin_filename).and_return(file_and_content)
-        expect(parser).to receive(:extract).with('contents1').and_return('code1')
+        expect(Ruumba::Iterators::StdinIterator).to receive(:new).with(File.expand_path(stdin_filename)).and_return(file_and_content)
+        expect(parser).to receive(:extract).with(stdin_contents).and_return(rubocop_stdin_contents)
       end
 
       shared_examples_for 'linting a single file' do
-        it 'copies the file, adding the .rb extension and runs rubocop' do
-          expect(File).to receive(:open).with(temp_dir.join('file1.erb.rb').to_s, 'w+')
-
+        it 'passes the extracted files contents on stdin, appends the rb extension to the stdin filename argument and runs rubocop' do
           expect(rubocop_runner).to receive(:execute).and_return(result)
 
-          expect(analysis).to eq(result)
+          expect(analysis).to eq(analyze_result)
         end
 
         context 'when the rb extension is disabled' do
           let(:disable_rb_extension) { true }
+          let(:rubocop_stdin_filename) { File.expand_path(temp_dir.join(Pathname.new(stdin_filename)).to_s) }
 
-          it 'copies the file and runs rubocop' do
-            expect(File).to receive(:open).with(temp_dir.join('file1.erb').to_s, 'w+')
-
+          it 'passes the extracted files contents on stdin and runs rubocop' do
             expect(rubocop_runner).to receive(:execute).and_return(result)
 
-            expect(analysis).to eq(result)
+            expect(analysis).to eq(analyze_result)
           end
         end
       end
@@ -114,7 +118,7 @@ describe Ruumba::Analyzer do
 
           expect(rubocop_runner).to receive(:execute).and_return(result)
 
-          expect(analysis).to eq(result)
+          expect(analysis).to eq(analyze_result)
         end
 
         context 'when the rb extension is disabled' do
@@ -126,7 +130,7 @@ describe Ruumba::Analyzer do
 
             expect(rubocop_runner).to receive(:execute).and_return(result)
 
-            expect(analysis).to eq(result)
+            expect(analysis).to eq(analyze_result)
           end
         end
       end

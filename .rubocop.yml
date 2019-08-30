@@ -2,7 +2,7 @@ Metrics/LineLength:
   Max: 200
 
 Metrics/MethodLength:
-  Max: 25
+  Max: 50
 
 Style/FrozenStringLiteralComment:
   Enabled: false
@@ -11,13 +11,16 @@ Metrics/AbcSize:
   Max: 30
 
 Metrics/PerceivedComplexity:
-  Max: 10
+  Max: 15
 
 Metrics/CyclomaticComplexity:
-  Max: 10
+  Max: 15
 
 Metrics/ClassLength:
   Max: 120
 
 Metrics/BlockLength:
   Max: 130
+
+Metrics/AbcSize:
+  Max: 50

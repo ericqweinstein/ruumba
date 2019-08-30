@@ -96,6 +96,11 @@ opts_parser = OptionParser.new do |opts|
   opts.on('-L', '--list-target-files', 'List all files Ruumba will inspect.') do
     options[:arguments] << '--list-target-files'
   end
+
+  opts.on('-a', '--auto-correct', 'Auto-correct offenses.') do
+    options[:arguments] << '--auto-correct'
+    options[:auto_correct] = true
+  end
 end
 
 begin
