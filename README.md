@@ -44,9 +44,9 @@ Then:
 λ bundle exec rake ruumba
 ```
 
-## Fix paths and unapplicable cops
+## Fix Paths and Non-Applicable Cops
 
-By default, Rubocop only scan `.rb` files and so does Ruumba. If you want shown
+By default, RuboCop only scans `.rb` files and so does Ruumba. If you want shown
 paths to reflect original paths, you can add create a `.ruumba.yml` config file
 with the following contents:
 
@@ -56,14 +56,14 @@ AllCops:
     - '**/*.erb'
 ```
 
-You can then disable `.rb` extension auto-append and use your config file:
+You can then disable the `.rb` extension auto-append and use your config file:
 
 ```bash
 λ ruumba -D -e app/views -c .ruumba.yml
 ```
 
-Since Ruumba rewrites new files form `.erb` files contents, some formatting cops
-cannot apply, you can disable them in your Ruumba file:
+Since Ruumba rewrites new files from `.erb` files contents, some formatting cops
+cannot apply. You can disable them in your Ruumba config file:
 
 ```yaml
 Style/FrozenStringLiteralComment:
@@ -81,14 +81,14 @@ Layout/TrailingBlankLines:
 You can use `ruumba -a` or `ruumba -D` to look for other cops if this list is
 missing some.
 
-You might want to include your existing rubocop config file by appending this in
+You might want to include your existing RuboCop config file by appending this in
 front of your Ruumba config:
 
 ```yaml
 inherit_from: .rubocop.yml
 ```
 
-### Editor integrations
+### Editor Integrations
 
 * [Atom plugin](https://atom.io/packages/linter-ruumba)
 
