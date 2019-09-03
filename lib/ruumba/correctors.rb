@@ -33,7 +33,7 @@ module Ruumba
         [stdout, stderr].each do |output|
           next if output.nil? || output.empty?
 
-          matches = output.scan(/\A(.*^====================)?$(.*)\z/m)
+          matches = output.scan(/\A(.*====================)?$(.*)\z/m)
 
           next if matches.empty?
 

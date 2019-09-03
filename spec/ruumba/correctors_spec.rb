@@ -120,6 +120,22 @@ describe Ruumba::Correctors::StdinCorrector do
 
       expect(stdout).to eq(stdout_replaced)
     end
+
+    context 'when outputting in JSON format' do
+      let(:stdout_base) do
+        <<~STDOUT
+          {"metadata":{"rubocop_version":"0.74.0","ruby_engine":"ruby","ruby_version":"2.6.3","ruby_patchlevel":"62","ruby_platform":"x86_64-linux"},"files":[{"path":"app/views/file.rb","offenses":[{"severity":"convention","message":"Surrounding space missing in default value assignment.","cop_name":"Layout/SpaceAroundEqualsInParameterDefault","corrected":true,"location":{"start_line":17,"start_column":31,"last_line":17,"last_column":31,"length":1,"line":17,"column":31}}]}],"summary":{"offense_count":1,"target_file_count":1,"inspected_file_count":1}}====================
+          #{new_contents}
+        STDOUT
+      end
+      it 'replaces the output contents with the corrected output' do
+        expect(corrector).to receive(:handle_corrected_output).with(old_digest, "\n#{new_contents}\n", original_contents) { |&block| block.call("#{new_contents} - fixed") }
+
+        corrector.correct(stdout, stderr, file_mappings)
+
+        expect(stdout).to eq(stdout_replaced)
+      end
+    end
   end
 end
 
