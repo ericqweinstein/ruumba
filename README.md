@@ -92,6 +92,7 @@ inherit_from: .rubocop.yml
 
 * [Atom plugin](https://atom.io/packages/linter-ruumba)
 * [Vim plugin](https://github.com/dense-analysis/ale)
+* [Emacs package](https://github.com/flycheck/flycheck)
 
 ## Contributing
 1. Branch (`git checkout -b fancy-new-feature`)
