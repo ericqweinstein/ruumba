@@ -91,6 +91,7 @@ inherit_from: .rubocop.yml
 ### Editor Integrations
 
 * [Atom plugin](https://atom.io/packages/linter-ruumba)
+* [Vim plugin](https://github.com/dense-analysis/ale)
 
 ## Contributing
 1. Branch (`git checkout -b fancy-new-feature`)
