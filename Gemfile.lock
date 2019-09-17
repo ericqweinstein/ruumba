@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruumba (0.1.12)
+    ruumba (0.1.13)
       rubocop
 
 GEM
