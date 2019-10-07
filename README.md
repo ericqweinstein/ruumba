@@ -11,7 +11,7 @@ Ruumba
 Ruumba is [RuboCop's](https://github.com/bbatsov/rubocop) sidekick, allowing you to lint your .erb Rubies as well as your regular-type ones.
 
 ## Dependencies
-* Ruby 2.3+
+* Ruby 2.4+
 
 ## Installation
 ```bash
