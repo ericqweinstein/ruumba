@@ -1,6 +1,10 @@
+$LOAD_PATH.push File.expand_path('../lib', __FILE__)
+
+require 'ruumba/version'
+
 Gem::Specification.new do |g|
   g.name          = 'ruumba'
-  g.version       = File.read('VERSION')
+  g.version       = ::Ruumba::Version::STRING
   g.authors       = ['Eric Weinstein', 'Jan Biniok', 'Yvan Barthélemy', 'Andrew Clemons']
   g.date          = '2019-09-17'
   g.description   = 'RuboCop linting for ERB templates.'
