@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruumba (0.1.13)
+    ruumba (0.1.14)
       rubocop
 
 GEM
@@ -105,4 +105,4 @@ RUBY VERSION
    ruby 2.4.9p362
 
 BUNDLED WITH
-   1.17.3
+   2.0.2
