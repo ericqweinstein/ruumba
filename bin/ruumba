@@ -3,9 +3,12 @@
 
 require 'optparse'
 require_relative '../lib/ruumba'
+require_relative '../lib/ruumba/version'
 
 options = { arguments: [] }
 opts_parser = OptionParser.new do |opts|
+  opts.version = Ruumba::Version::STRING
+
   opts.banner = 'Usage: ruumba path/to/ERBs/'
 
   opts.on('-h', '--help', 'Display this screen') do
