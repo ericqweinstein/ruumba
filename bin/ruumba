@@ -104,6 +104,11 @@ opts_parser = OptionParser.new do |opts|
     options[:arguments] << '--auto-correct'
     options[:auto_correct] = true
   end
+
+  opts.on(nil, '--safe-auto-correct', "Run auto-correct only when it's safe.") do
+    options[:arguments] << '--safe-auto-correct'
+    options[:auto_correct] = true
+  end
 end
 
 begin
