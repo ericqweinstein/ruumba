@@ -68,13 +68,13 @@ cannot apply. You can disable them in your Ruumba config file:
 ```yaml
 Style/FrozenStringLiteralComment:
   Enabled: false
-Layout/AlignHash:
+Layout/HashAlignment:
   Enabled: false
-Layout/AlignParameters:
+Layout/ParameterAlignment:
   Enabled: false
 Layout/IndentationWidth:
   Enabled: false
-Layout/TrailingBlankLines:
+Layout/TrailingEmptyLines:
   Enabled: false
 ```
 
