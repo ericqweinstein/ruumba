@@ -84,5 +84,38 @@ describe Ruumba::Parser do
 
       expect(analyzer.extract(erb)).to eq(' ' * 46)
     end
+
+    it 'extracts comments on the same line' do
+      erb = '<% if (foo = bar) %><%# should always be truthy %>'
+
+      expect(analyzer.extract(erb))
+        .to eq('   if (foo = bar) ;    # should always be truthy   ')
+    end
+
+    context 'when configured with a region marker' do
+      let(:analyzer) { described_class.new('mark') }
+
+      it 'extracts comments on the same line' do
+        erb = '<% if (foo = bar) %><%# should always be truthy %>'
+
+        # rubocop:disable Layout/TrailingWhitespace
+        ruby =
+          <<~RUBY
+              
+            mark_0000000001
+             if (foo = bar) 
+            mark_0000000001
+            ;    
+            mark_0000000002
+            # should always be truthy 
+            mark_0000000002
+              
+          RUBY
+          .chomp
+        # rubocop:enable Layout/TrailingWhitespace
+
+        expect(analyzer.extract(erb)).to eq(ruby)
+      end
+    end
   end
 end

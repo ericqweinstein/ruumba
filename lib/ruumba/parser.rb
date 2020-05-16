@@ -115,7 +115,9 @@ module Ruumba
         if region[0] == '#'
           region.gsub!(/^ /, '#')
           region.gsub!(/^(?!#)/, '#')
-        elsif match_marker
+        end
+
+        if match_marker
           region.prepend("\n", match_marker, "\n")
           region.concat("\n", match_marker, "\n")
         end
