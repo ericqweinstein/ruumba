@@ -3,13 +3,13 @@
 require 'spec_helper'
 
 describe Ruumba::Parser do
-  let(:analyzer) { described_class.new }
+  let(:parser) { described_class.new }
 
   describe '#extract' do
     it 'extracts one line of Ruby code from an ERB template' do
       erb = "<%= puts 'Hello, world!' %>"
 
-      expect(analyzer.extract(erb)).to eq("    puts 'Hello, world!'   ")
+      expect(parser.extract(erb)).to eq("    puts 'Hello, world!'   ")
     end
 
     it 'extracts many lines of Ruby code from an ERB template' do
@@ -19,13 +19,13 @@ describe Ruumba::Parser do
         <% baz %>
       RHTML
 
-      expect(analyzer.extract(erb)).to eq("    puts 'foo'   \n    puts 'bar'   \n   baz   \n")
+      expect(parser.extract(erb)).to eq("    puts 'foo'   \n    puts 'bar'   \n   baz   \n")
     end
 
     it 'extracts multiple interpolations per line' do
       erb = "<%= puts 'foo' %> then <% bar %>"
 
-      expect(analyzer.extract(erb)).to eq("    puts 'foo' ;           bar   ")
+      expect(parser.extract(erb)).to eq("    puts 'foo' ;           bar   ")
     end
 
     it 'does extract single line ruby comments from an ERB template' do
@@ -45,7 +45,7 @@ describe Ruumba::Parser do
         RUBY
       # rubocop:enable Layout/TrailingWhitespace
 
-      expect(analyzer.extract(erb)).to eq(parsed)
+      expect(parser.extract(erb)).to eq(parsed)
     end
 
     it 'does not extract ruby comments from interpolated code' do
@@ -67,7 +67,7 @@ describe Ruumba::Parser do
         RUBY
       # rubocop:enable Layout/TrailingWhitespace
 
-      expect(analyzer.extract(erb)).to eq(parsed)
+      expect(parser.extract(erb)).to eq(parsed)
     end
 
     it 'extracts and converts lines using <%== for the raw helper' do
@@ -75,14 +75,47 @@ describe Ruumba::Parser do
         <span class="test" <%== 'style="display: none;"' if num.even? %>>
       RHTML
 
-      expect(analyzer.extract(erb))
+      expect(parser.extract(erb))
         .to eq("                    raw 'style=\"display: none;\"' if num.even?    \n")
     end
 
     it 'does not extract code from lines without ERB interpolation' do
       erb = "<h1>Dead or alive, you're coming with me.</h1>"
 
-      expect(analyzer.extract(erb)).to eq(' ' * 46)
+      expect(parser.extract(erb)).to eq(' ' * 46)
+    end
+
+    it 'extracts comments on the same line' do
+      erb = '<% if (foo = bar) %><%# should always be truthy %>'
+
+      expect(parser.extract(erb))
+        .to eq('   if (foo = bar) ;    # should always be truthy   ')
+    end
+
+    context 'when configured with a region marker' do
+      let(:parser) { described_class.new('mark') }
+
+      it 'extracts comments on the same line' do
+        erb = '<% if (foo = bar) %><%# should always be truthy %>'
+
+        # rubocop:disable Layout/TrailingWhitespace
+        ruby =
+          <<~RUBY
+              
+            mark_0000000001
+             if (foo = bar) 
+            mark_0000000001
+            ;    
+            mark_0000000002
+            # should always be truthy 
+            mark_0000000002
+              
+          RUBY
+          .chomp
+        # rubocop:enable Layout/TrailingWhitespace
+
+        expect(parser.extract(erb)).to eq(ruby)
+      end
     end
   end
 end
