@@ -5,6 +5,6 @@
 module Ruumba
   # Provides the ruumba version
   module Version
-    STRING = '0.1.15'
+    STRING = '0.1.16'
   end
 end
