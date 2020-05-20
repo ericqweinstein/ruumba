@@ -36,14 +36,12 @@ describe Ruumba::Parser do
           bar %>
         RHTML
 
-      # rubocop:disable Layout/TrailingWhitespace
       parsed =
         <<~RUBY
              puts 'foo'
           # that puts is ruby code
           bar   
         RUBY
-      # rubocop:enable Layout/TrailingWhitespace
 
       expect(parser.extract(erb)).to eq(parsed)
     end
@@ -57,7 +55,6 @@ describe Ruumba::Parser do
           <% puts 'foo' %>
         RHTML
 
-      # rubocop:disable Layout/TrailingWhitespace
       parsed =
         <<~RUBY
             # this is a multiline comment
@@ -65,7 +62,6 @@ describe Ruumba::Parser do
           #   it should be inside a comment   
              puts 'foo'   
         RUBY
-      # rubocop:enable Layout/TrailingWhitespace
 
       expect(parser.extract(erb)).to eq(parsed)
     end
@@ -98,7 +94,6 @@ describe Ruumba::Parser do
       it 'extracts comments on the same line' do
         erb = '<% if (foo = bar) %><%# should always be truthy %>'
 
-        # rubocop:disable Layout/TrailingWhitespace
         ruby =
           <<~RUBY
               
@@ -112,7 +107,6 @@ describe Ruumba::Parser do
               
           RUBY
           .chomp
-        # rubocop:enable Layout/TrailingWhitespace
 
         expect(parser.extract(erb)).to eq(ruby)
       end
