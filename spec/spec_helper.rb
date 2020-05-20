@@ -8,7 +8,7 @@ SimpleCov.start
 SimpleCov.add_filter '/spec/'
 
 # Require all lib/ files
-Dir["#{File.dirname(__FILE__)}/../lib/**/*.rb"].each { |f| require f }
+Dir["#{File.dirname(__FILE__)}/../lib/**/*.rb"].sort.each { |f| require f }
 
 RSpec.configure do |c|
   c.mock_framework = :rspec

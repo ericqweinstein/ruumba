@@ -6,7 +6,7 @@ module Ruumba
   # Responsible for extracting interpolated Ruby.
   class Parser
     # The regular expression to capture interpolated Ruby.
-    ERB_REGEX = /<%[-=]?(.*?)-?%>/m
+    ERB_REGEX = /<%[-=]?(.*?)-?%>/m.freeze
 
     def initialize(region_start_marker = nil)
       @region_start_marker = region_start_marker
