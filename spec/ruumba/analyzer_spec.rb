@@ -106,7 +106,7 @@ describe Ruumba::Analyzer do
       end
 
       before do
-        expect(Ruumba::Iterators::DirectoryIterator).to receive(:new).with(file_list).and_return(files_and_contents)
+        expect(Ruumba::Iterators::DirectoryIterator).to receive(:new).with(file_list, temp_dir.to_s).and_return(files_and_contents)
         expect(parser).to receive(:extract).with('contents1').and_return('code1')
         expect(parser).to receive(:extract).with('contents2').and_return('code2')
       end
