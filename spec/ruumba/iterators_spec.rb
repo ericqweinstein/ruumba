@@ -21,7 +21,7 @@ describe Ruumba::Iterators::StdinIterator do
 end
 
 describe Ruumba::Iterators::DirectoryIterator do
-  let(:iterator) { described_class.new(input_list) }
+  let(:iterator) { described_class.new(input_list, tmp_dir_path) }
   let(:files) { iterator.to_a }
 
   describe '#each' do
@@ -30,6 +30,7 @@ describe Ruumba::Iterators::DirectoryIterator do
     let(:file2) { target_dir.join('dir2', 'file2.erb') }
     let(:file3) { target_dir.join('file3.erb') }
     let(:file4) { target_dir.join('file4.rb') }
+    let(:tmp_dir_path) { '/fake/tmp_dir' }
 
     before do
       [file1, file2, file3, file4].each do |file|
@@ -62,6 +63,19 @@ describe Ruumba::Iterators::DirectoryIterator do
 
       it 'expands the directories and returns the erb files found' do
         expect(files.map(&:first).map(&:to_s)).to match_array([file1, file2, file3].map(&:to_s))
+      end
+    end
+
+    context 'when tmp dir is inside project' do
+      let(:input_list) { nil }
+      let(:tmp_dir_path) { target_dir.to_s }
+
+      before do
+        allow(File).to receive(:expand_path).with('.').and_return(target_dir.to_s)
+      end
+
+      it 'returns the erb files found' do
+        expect(files).to be_empty
       end
     end
   end

@@ -26,8 +26,9 @@ module Ruumba
     class DirectoryIterator
       include Enumerable
 
-      def initialize(files_or_dirs)
+      def initialize(files_or_dirs, temp_dir)
         @files_or_dirs = files_or_dirs
+        @temp_dir = temp_dir
       end
 
       def each(&block)
@@ -38,15 +39,15 @@ module Ruumba
 
       private
 
-      attr_reader :files_or_dirs
+      attr_reader :files_or_dirs, :temp_dir
 
       def files
         full_list.flat_map do |file_or_dir|
           if file_or_dir.file?
             file_or_dir if file_or_dir.to_s.end_with?('.erb')
           else
-            Dir["#{file_or_dir}/**/*.erb"].map do |file|
-              Pathname.new(file)
+            Dir[File.join(file_or_dir, '**/*.erb')].map do |file|
+              Pathname.new(file) unless file.start_with?(temp_dir)
             end
           end
         end.compact

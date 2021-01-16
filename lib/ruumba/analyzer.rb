@@ -44,7 +44,7 @@ module Ruumba
         if stdin?
           [Iterators::StdinIterator.new(File.expand_path(stdin_filename)), Correctors::StdinCorrector.new(digestor, parser)]
         else
-          [Iterators::DirectoryIterator.new(files_or_dirs), Correctors::FileCorrector.new(digestor, parser)]
+          [Iterators::DirectoryIterator.new(files_or_dirs, temp_dir.to_s), Correctors::FileCorrector.new(digestor, parser)]
         end
 
       iterator.each do |file, contents|
