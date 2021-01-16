@@ -6,7 +6,7 @@ Gem::Specification.new do |g|
   g.name          = 'ruumba'
   g.version       = ::Ruumba::Version::STRING
   g.authors       = ['Eric Weinstein', 'Jan Biniok', 'Yvan Barthélemy', 'Andrew Clemons']
-  g.date          = '2020-05-19'
+  g.date          = '2021-01-15'
   g.description   = 'RuboCop linting for ERB templates.'
   g.email         = 'eric.q.weinstein@gmail.com'
   g.files         = Dir.glob('{lib}/**/*') + %w(README.md Rakefile)
