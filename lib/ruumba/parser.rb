@@ -35,6 +35,14 @@ module Ruumba
       # left so they match the original again
       extracted_ruby.gsub!(/   raw/, 'raw')
 
+      unless region_start_marker
+        add_newline = extracted_ruby =~ /\n\z/
+
+        extracted_ruby.gsub!(/\s+$/, '')
+
+        extracted_ruby << "\n" if add_newline
+      end
+
       extracted_ruby
     end
 
